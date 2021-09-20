@@ -120,9 +120,6 @@ class SMC():
 
     L : L-kernel instance
 
-    sampling : 'batch' or 'single_step' approach (where single_step should
-        be better for high dimensional problems).
-
     Methods
     -------
     normalise_weights : normalises importance sampling weights
@@ -146,7 +143,7 @@ class SMC():
     P.L.Green
     """
 
-    def __init__(self, N, D, p, q0, K, q, L, sampling='batch'):
+    def __init__(self, N, D, p, q0, K, q, L):
 
         # Assign variables to self
         self.N = N
@@ -156,7 +153,6 @@ class SMC():
         self.K = K
         self.q = q
         self.L = L
-        self.sampling = sampling
 
     def normalise_weights(self, logw):
         """
@@ -324,74 +320,37 @@ class SMC():
             # Record effective sample size at kth iteration
             self.Neff[self.k] = 1 / np.sum(np.square(wn))
 
-            # Generate new samples
-            if self.sampling == 'batch':
+            # Resample if effective sample size is below threshold
+            if self.Neff[self.k] < self.N/2:
 
-                # Resample if effective sample size is below threshold
-                if self.Neff[self.k] < self.N/2:
+                self.resampling_points = np.append(self.resampling_points,
+                                                   self.k)
+                x, p_logpdf_x, wn = self.resample(x, p_logpdf_x, wn)
+                logw = np.log(wn)
 
-                    self.resampling_points = np.append(self.resampling_points,
-                                                       self.k)
-                    x, p_logpdf_x, wn = self.resample(x, p_logpdf_x, wn)
-                    logw = np.log(wn)
+            # Propose new samples
+            for i in range(self.N):
+                x_new[i] = self.q.rvs(x_cond=x[i])
 
-                # If we are using a batched sampling approach, we
-                # propose new samples, across all dimensions
-                for i in range(self.N):
-                    x_new[i] = self.q.rvs(x_cond=x[i])
+            # Make sure evaluations of likelihood are vectorised
+            p_logpdf_x_new = self.p.logpdf(x_new)
 
-                # Make sure evaluations of likelihood are vectorised
-                p_logpdf_x_new = self.p.logpdf(x_new)
+            # Update log weights
+            logw_new = self.update_weights(x, x_new, logw, p_logpdf_x,
+                                           p_logpdf_x_new)
 
-                # Update log weights
-                logw_new = self.update_weights(x, x_new, logw, p_logpdf_x,
-                                               p_logpdf_x_new)
+            # Make sure that, if p.logpdf(x_new) is -inf, then logw_new
+            # will also be -inf. Otherwise it is returned as NaN.
+            for i in range(self.N):
+                if p_logpdf_x_new[i] == -np.inf:
+                    logw_new[i] = -np.inf
+                elif logw[i] == -np.inf:
+                    logw_new[i] = -np.inf
 
-                # Make sure that, if p.logpdf(x_new) is -inf, then logw_new
-                # will also be -inf. Otherwise it is returned as NaN.
-                for i in range(self.N):
-                    if p_logpdf_x_new[i] == -np.inf:
-                        logw_new[i] = -np.inf
-                    elif logw[i] == -np.inf:
-                        logw_new[i] = -np.inf
-
-                # Update samples, log weights, and posterior evaluations
-                x = np.copy(x_new)
-                logw = np.copy(logw_new)
-                p_logpdf_x = np.copy(p_logpdf_x_new)
-
-            if self.sampling == 'single_step':
-
-                # Loop to update one dimension at a time
-                for d in range(self.D):
-
-                    x_new = np.copy(x)
-                    for i in range(self.N):
-                        x_new[i, d] = self.q.rvs(x[i, d])
-
-                    # Make sure evaluations of likelihood are vectorised
-                    p_logpdf_x_new = self.p.logpdf(x_new)
-
-                    # Update log weights
-                    logw_new = self.update_weights(x, x_new, logw,
-                                                   p_logpdf_x,
-                                                   p_logpdf_x_new, d)
-
-                    # Find normalised weights
-                    wn = self.normalise_weights(logw_new)
-
-                    # Resample if effective sample size is below threshold
-                    Neff = 1 / np.sum(np.square(wn))
-                    if Neff < self.N/2:
-                        [x_new,
-                         p_logpdf_x_new,
-                         wn] = self.resample(x_new, p_logpdf_x_new, wn)
-                        logw_new = np.log(wn)
-
-                    # Update samples, log weights, and posterior evaluations
-                    x = np.copy(x_new)
-                    logw = np.copy(logw_new)
-                    p_logpdf_x = np.copy(p_logpdf_x_new)
+            # Update samples, log weights, and posterior evaluations
+            x = np.copy(x_new)
+            logw = np.copy(logw_new)
+            p_logpdf_x = np.copy(p_logpdf_x_new)
 
         # Final quantities to be returned
         self.x = x
@@ -430,19 +389,10 @@ class SMC():
         logw_new = np.vstack(np.zeros(self.N))
 
         # Find new weights
-        if self.sampling == 'batch':
-            for i in range(self.N):
-                logw_new[i] = (logw[i] +
-                               p_logpdf_x_new[i] -
-                               p_logpdf_x[i] +
-                               self.L.logpdf(x[i], x_new[i]) -
-                               self.q.logpdf(x_new[i], x[i]))
-        if self.sampling == 'single_step':
-            for i in range(self.N):
-                logw_new[i] = (logw[i] +
-                               p_logpdf_x_new[i] -
-                               p_logpdf_x[i] +
-                               self.L.logpdf(x[i, d], x_new[i, d]) -
-                               self.q.logpdf(x_new[i, d], x[i, d]))
-
+        for i in range(self.N):
+            logw_new[i] = (logw[i] +
+                           p_logpdf_x_new[i] -
+                           p_logpdf_x[i] +
+                           self.L.logpdf(x[i], x_new[i]) -
+                           self.q.logpdf(x_new[i], x[i]))
         return logw_new

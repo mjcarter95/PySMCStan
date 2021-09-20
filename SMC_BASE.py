@@ -61,6 +61,15 @@ class Q_Base(ABC):
     """
 
     @abstractmethod
+    def pdf(self, x, x_cond):
+        """
+        Description
+        -----------
+        Returns q(x | x_cond)
+        """
+        pass
+
+    @abstractmethod
     def logpdf(self, x, x_cond):
         """
         Description

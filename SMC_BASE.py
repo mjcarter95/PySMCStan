@@ -152,7 +152,7 @@ class SMC():
     P.L.Green
     """
 
-    def __init__(self, N, D, p, q0, K, q, L):
+    def __init__(self, N, D, p, q0, K, q, L, verbose=False):
 
         # Assign variables to self
         self.N = N
@@ -162,6 +162,7 @@ class SMC():
         self.K = K
         self.q = q
         self.L = L
+        self.verbose = verbose
 
     def normalise_weights(self, logw):
         """
@@ -309,7 +310,8 @@ class SMC():
         # Main sampling loop
         for self.k in range(self.K):
 
-            print('\nIteration :', self.k)
+            if self.verbose:
+                print('\nIteration :', self.k)
 
             # Find normalised weights and realise estimates
             wn = self.normalise_weights(logw)

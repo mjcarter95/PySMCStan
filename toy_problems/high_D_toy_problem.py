@@ -21,7 +21,7 @@ class Target(Target_Base):
     """ Define target """
 
     def __init__(self):
-        self.pdf = Normal_PDF(mean=np.repeat(2, D), cov=0.1*np.eye(D))
+        self.pdf = Normal_PDF(mean=np.repeat(2, D), cov=np.eye(D))
 
     def logpdf(self, x):
         return self.pdf.logpdf(x)
@@ -65,7 +65,7 @@ q = Q()
 
 # No. samples and iterations
 N = 100
-K = 20
+K = 100
 
 # OptL SMC sampler with Gaussian approximation
 smc_gauss = SMC_OPT(N, D, p, q0, K, q)
@@ -106,9 +106,9 @@ for i in range(2):
         if i == 1:
             ax[i].plot(smc_mc.var_estimate_EES[:, d, d], 'r',
                        alpha=0.5)
-    ax[i].plot(np.repeat(0.1, K), 'lime', linewidth=3.0,
+    ax[i].plot(np.repeat(1, K), 'lime', linewidth=3.0,
                linestyle='--')
-    ax[i].set_ylim([0, 0.5])
+    ax[i].set_ylim([0, 1.5])
     ax[i].set_xlabel('Iteration')
     ax[i].set_ylabel('Var[$x$]')
     if i == 0:

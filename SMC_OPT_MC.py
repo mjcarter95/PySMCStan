@@ -48,11 +48,4 @@ class SMC_OPT_MC(SMC):
             # Calculate new log-weight
             logw_new[i] = p_logpdf_x_new[i] - np.log(den)
 
-            '''
-            logw_new[i] = (logw[i] +
-                           p_logpdf_x_new[i] -
-                           p_logpdf_x[i] +
-                           self.L.logpdf(x[i], x_new[i]) -
-                           self.q.logpdf(x_new[i], x[i]))
-            '''
         return logw_new

@@ -40,3 +40,38 @@ def normalise_weights(logw):
 
     return wn
 
+
+def resample(x, p_logpdf_x, wn, N):
+    """
+    Description
+    -----------
+    Resample given normalised weights.
+
+    Parameters
+    ----------
+    x : array of current samples
+
+    p_logpdf_x : array of current target evaluations.
+
+    wn : array or normalised weights
+
+    N : no. samples
+
+    Returns
+    -------
+    x_new : resampled values of x
+
+    p_logpdf_x_new : log pdfs associated with x_new
+
+    wn_new : normalised weights associated with x_new
+
+    """
+    i = np.linspace(0, N-1, N, dtype=int)  # Sample positions
+    i_new = np.random.choice(i, N, p=wn[:, 0])   # i is resampled
+    wn_new = np.ones(N) / N           # wn is reset
+
+    # New samples
+    x_new = x[i_new]
+    p_logpdf_x_new = p_logpdf_x[i_new]
+
+    return x_new, p_logpdf_x_new, wn_new

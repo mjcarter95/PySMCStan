@@ -133,8 +133,6 @@ class SMC():
     Methods
     -------
 
-    resample : resamples from normalised importance weights
-
     estimate : realise importance sampling estimates of mean and
         covariance matrix of the target.
 
@@ -163,40 +161,6 @@ class SMC():
         self.q = q
         self.L = L
         self.verbose = verbose
-
-    def resample(self, x, p_logpdf_x, wn):
-        """
-        Description
-        -----------
-        Resample given normalised weights.
-
-        Parameters
-        ----------
-        x : array of current samples
-
-        p_logpdf_x : array of current target evaluations.
-
-        wn : array or normalised weights
-
-        Returns
-        -------
-        x_new : resampled values of x
-
-        p_logpdf_x_new : log pdfs associated with x_new
-
-        wn_new : normalised weights associated with x_new
-
-        """
-
-        i = np.linspace(0, self.N-1, self.N, dtype=int)  # Sample positions
-        i_new = np.random.choice(i, self.N, p=wn[:, 0])   # i is resampled
-        wn_new = np.ones(self.N) / self.N           # wn is reset
-
-        # New samples
-        x_new = x[i_new]
-        p_logpdf_x_new = p_logpdf_x[i_new]
-
-        return x_new, p_logpdf_x_new, wn_new
 
     def estimate(self, x, wn):
         """
@@ -302,7 +266,7 @@ class SMC():
 
                 self.resampling_points = np.append(self.resampling_points,
                                                    self.k)
-                x, p_logpdf_x, wn = self.resample(x, p_logpdf_x, wn)
+                x, p_logpdf_x, wn = IS.resample(x, p_logpdf_x, wn, self.N)
                 logw = np.log(wn)
 
             # Propose new samples

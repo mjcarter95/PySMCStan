@@ -261,7 +261,7 @@ class SMC():
         self.logw = logw
 
     def update_weights(self, x, x_new, logw, p_logpdf_x,
-                       p_logpdf_x_new, d=None):
+                       p_logpdf_x_new):
         """
         Description
         -----------
@@ -279,9 +279,6 @@ class SMC():
         p_logpdf_x : log target evaluations associated with x
 
         p_logpdf_x_new : log target evaluations associated with x_new
-
-        d : current dimension we are updating (only needed if single_step
-            sampling is being used).
 
         Returns
         -------

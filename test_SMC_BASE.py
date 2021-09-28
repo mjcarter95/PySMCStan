@@ -53,7 +53,7 @@ class Q(Q_Base):
 
 class L(L_Base):
     """ Define L-kernel """
-    
+
     def logpdf(self, x, x_cond):
         return -0.5 * (x - x_cond).T @ (x - x_cond)
 
@@ -86,17 +86,3 @@ def test_sampler():
                        atol=0.2)
     assert np.allclose(smc.var_estimate[-1][0][1], p.cov[0][1],
                        atol=0.2)
-
-
-def test_normalise_weights():
-    """ Test that normalised weights always sum to 1 and that we can cope with
-    -inf values in the array of low weights.
-
-    """
-
-    logw = np.log(np.random.rand(1, N))
-    wn = smc.normalise_weights(logw)
-    assert np.allclose(np.sum(wn), 1.0, atol=1e-8)
-
-    logw[0] = -np.inf
-    assert np.allclose(np.sum(wn), 1.0, atol=1e-8)

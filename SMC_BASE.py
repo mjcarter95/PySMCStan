@@ -1,4 +1,5 @@
 import numpy as np
+import importance_sampling as IS
 from abc import abstractmethod, ABC
 
 class Target_Base(ABC):
@@ -131,7 +132,6 @@ class SMC():
 
     Methods
     -------
-    normalise_weights : normalises importance sampling weights
 
     resample : resamples from normalised importance weights
 
@@ -163,40 +163,6 @@ class SMC():
         self.q = q
         self.L = L
         self.verbose = verbose
-
-    def normalise_weights(self, logw):
-        """
-        Description
-        -----------
-        Normalise importance weights. Note that we remove the mean here
-            just to avoid numerical errors in evaluating the exponential.
-            We have to be careful with -inf values in the log weights
-            sometimes. This can happen if we are sampling from a pdf with
-            zero probability regions, for example.
-
-        Parameters
-        ----------
-        logw : array of logged importance weights
-
-        Returns
-        -------
-        wn : array of normalised weights
-
-        """
-
-        # Identify elements of logw that are not -inf
-        indices = np.invert(np.isneginf(logw))
-
-        # Apply normalisation only to those elements of log that are not -inf
-        logw[indices] = logw[indices] - np.max(logw[indices])
-
-        # Find standard weights
-        w = np.exp(logw)
-
-        # Find normalised weights
-        wn = w / np.sum(w)
-
-        return wn
 
     def resample(self, x, p_logpdf_x, wn):
         """
@@ -314,7 +280,7 @@ class SMC():
                 print('\nIteration :', self.k)
 
             # Find normalised weights and realise estimates
-            wn = self.normalise_weights(logw)
+            wn = IS.normalise_weights(logw)
             (self.mean_estimate[self.k],
              self.var_estimate[self.k]) = self.estimate(x, wn)
 

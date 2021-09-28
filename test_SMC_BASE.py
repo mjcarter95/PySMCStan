@@ -40,10 +40,13 @@ class Q0(Q0_Base):
 
 class Q(Q_Base):
     """ Define general proposal """
-    
+
+    def pdf(self, x, x_cond):
+        return (2 * np.pi)**-1 * np.exp(-0.5 * (x - x_cond).T @ (x - x_cond))
+
     def logpdf(self, x, x_cond):
         return  -0.5 * (x - x_cond).T @ (x - x_cond)
-        
+
     def rvs(self, x_cond):
         return x_cond + np.random.randn(2)
 

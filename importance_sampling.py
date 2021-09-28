@@ -75,3 +75,45 @@ def resample(x, p_logpdf_x, wn, N):
     p_logpdf_x_new = p_logpdf_x[i_new]
 
     return x_new, p_logpdf_x_new, wn_new
+
+
+def estimate(x, wn, D, N):
+    """
+    Description
+    -----------
+    Estimate some quantities of interest (just mean and covariance
+        matrix for now).
+
+    Parameters
+    ----------
+    x : samples from the target
+
+    wn : normalised weights associated with the target
+
+    D : dimension of problem
+
+    N : no. samples
+
+    Returns
+    -------
+    m : estimated mean
+
+    v : estimated covariance matrix
+
+    """
+
+    # Estimate the mean
+    m = wn.T @ x
+
+    # Remove the mean from our samples then estimate the variance
+    x = x - m
+
+    if D == 1:
+        v = wn.T @ np.square(x)
+    else:
+        v = np.zeros([D, D])
+        for i in range(N):
+            xv = x[i][np.newaxis]  # Make each x into a 2D array
+            v += wn[i] * xv.T @ xv
+
+    return m, v

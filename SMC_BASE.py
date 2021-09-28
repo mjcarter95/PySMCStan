@@ -162,43 +162,6 @@ class SMC():
         self.L = L
         self.verbose = verbose
 
-    def estimate(self, x, wn):
-        """
-        Description
-        -----------
-        Estimate some quantities of interest (just mean and covariance
-            matrix for now).
-
-        Parameters
-        ----------
-        x : samples from the target
-
-        wn : normalised weights associated with the target
-
-        Returns
-        -------
-        m : estimated mean
-
-        v : estimated covariance matrix
-
-        """
-
-        # Estimate the mean
-        m = wn.T @ x
-
-        # Remove the mean from our samples then estimate the variance
-        x = x - m
-
-        if self.D == 1:
-            v = wn.T @ np.square(x)
-        else:
-            v = np.zeros([self.D, self.D])
-            for i in range(self.N):
-                xv = x[i][np.newaxis]  # Make each x into a 2D array
-                v += wn[i] * xv.T @ xv
-
-        return m, v
-
     def generate_samples(self):
 
         """
@@ -246,7 +209,7 @@ class SMC():
             # Find normalised weights and realise estimates
             wn = IS.normalise_weights(logw)
             (self.mean_estimate[self.k],
-             self.var_estimate[self.k]) = self.estimate(x, wn)
+             self.var_estimate[self.k]) = IS.estimate(x, wn, self.D, self.N)
 
             # EES recycling scheme
             lr = np.append(lr, np.sum(wn)**2 / np.sum(wn**2))

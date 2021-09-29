@@ -10,3 +10,4 @@
 - Added verbose option to ```SMC_BASE``` class
 
 ## Version 3
+- Automatic testing in Github

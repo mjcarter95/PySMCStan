@@ -1,7 +1,7 @@
 import numpy as np
 import sys
 sys.path.append('..')  # noqa
-from SMC_BASE import SMC, Target_Base, Q0_Base, Q_Base, L_Base
+from SMC_BASE import SMC, Target_Base, Q0_Base, Q_Base
 from scipy.stats import multivariate_normal as Normal_PDF
 
 """
@@ -51,31 +51,23 @@ class Q(Q_Base):
         return x_cond + np.random.randn(2)
 
 
-class L(L_Base):
-    """ Define L-kernel """
-
-    def logpdf(self, x, x_cond):
-        return -0.5 * (x - x_cond).T @ (x - x_cond)
-
 # No. samples and iterations
-N = 1000
-K = 500
+N = 100
+K = 20
 
-# SMC sampler with user-defined L-kernel
+# Define problem
 p = Target()
 q0 = Q0()
 q = Q()
-l = L()
-smc = SMC(N, 2, p, q0, K, q, l)
 
-
-def test_sampler():
-    """ For this simple example, we test that the SMC estimates of target mean
-    and variance are reasonably close to the truth.
+def test_monte_carlo_optL():
+    """ Test the predictions made by an SMC sampler with Monte-Carlo
+        approximation of the optimal L-kernel.
 
     """
 
     # SMC sampler with user-defined L-kernel
+    smc = SMC(N, 2, p, q0, K, q, optL='monte-carlo')
     smc.generate_samples()
 
     # Check estimates

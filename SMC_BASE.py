@@ -89,24 +89,6 @@ class Q_Base(ABC):
 
         pass
 
-class L_Base(ABC):
-    """
-    Description
-    -----------
-    This shows the methods that user will need to define to specify
-    the L-kernel.
-
-    """
-
-    @abstractmethod
-    def logpdf(self, x, x_cond):
-        """
-        Description
-        -----------
-        Returns log L(x | x_cond)
-        """
-        pass
-
 class SMC():
 
     """
@@ -128,7 +110,9 @@ class SMC():
 
     q : general proposal distribution instance
 
-    L : L-kernel instance
+    optL : approximation method for the optimal L-kernel. Can be either
+        'gauss' or 'monte-carlo' (representing a Gaussian approximation
+        or a Monte-Carlo approximation respectively).
 
     Methods
     -------
@@ -150,7 +134,7 @@ class SMC():
     P.L.Green
     """
 
-    def __init__(self, N, D, p, q0, K, q, L, verbose=False):
+    def __init__(self, N, D, p, q0, K, q, optL, verbose=False):
 
         # Assign variables to self
         self.N = N
@@ -159,7 +143,7 @@ class SMC():
         self.q0 = q0
         self.K = K
         self.q = q
-        self.L = L
+        self.optL = optL
         self.verbose = verbose
 
     def generate_samples(self):
@@ -289,11 +273,24 @@ class SMC():
         # Initialise
         logw_new = np.vstack(np.zeros(self.N))
 
-        # Find new weights
-        for i in range(self.N):
-            logw_new[i] = (logw[i] +
-                           p_logpdf_x_new[i] -
-                           p_logpdf_x[i] +
-                           self.L.logpdf(x[i], x_new[i]) -
-                           self.q.logpdf(x_new[i], x[i]))
+        # Use Gaussian approximation of the optimal L-kernel
+        if self.optL == 'gauss':
+            pass
+
+        # Use Monte-Carlo approximation of the optimal L-kernel
+        if self.optL == 'monte-carlo':
+            for i in range(self.N):
+
+                # Initialise what will be the denominator of our
+                # weight-update equation
+                den = np.zeros(1)
+
+                # Realise Monte-Carlo estimate of denominator
+                for j in range(self.N):
+                    den += self.q.pdf(x_new[i], x[j])
+                den /= self.N
+
+                # Calculate new log-weight
+                logw_new[i] = p_logpdf_x_new[i] - np.log(den)
+
         return logw_new

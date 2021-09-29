@@ -60,13 +60,34 @@ p = Target()
 q0 = Q0()
 q = Q()
 
+
+def test_gauss_optL():
+    """ Test the predictions made by an SMC sampler with Monte-Carlo
+        approximation of the optimal L-kernel.
+
+    """
+
+    # SMC sampler
+    smc = SMC(N, 2, p, q0, K, q, optL='gauss')
+    smc.generate_samples()
+
+    # Check estimates
+    assert np.allclose(smc.mean_estimate_EES[-1], p.mean, atol=0.1)
+    assert np.allclose(smc.var_estimate_EES[-1][0][0], p.cov[0][0],
+                       atol=0.2)
+    assert np.allclose(smc.var_estimate[-1][1][1], p.cov[1][1],
+                       atol=0.2)
+    assert np.allclose(smc.var_estimate[-1][0][1], p.cov[0][1],
+                       atol=0.2)
+
+
 def test_monte_carlo_optL():
     """ Test the predictions made by an SMC sampler with Monte-Carlo
         approximation of the optimal L-kernel.
 
     """
 
-    # SMC sampler with user-defined L-kernel
+    # SMC sampler
     smc = SMC(N, 2, p, q0, K, q, optL='monte-carlo')
     smc.generate_samples()
 

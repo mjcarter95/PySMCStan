@@ -250,7 +250,9 @@ class SMC():
         Description
         -----------
         Used to update the log weights of a new set of samples, using the
-            weights of the samples from the previous iteration.
+            weights of the samples from the previous iteration. This is
+            either done using a Gaussian approximation or a Monte-Carlo
+            approximation of the opimal L-kernel.
 
         Parameters
         ----------
@@ -275,7 +277,61 @@ class SMC():
 
         # Use Gaussian approximation of the optimal L-kernel
         if self.optL == 'gauss':
-            pass
+
+            # Collect x and x_new together into X
+            X = np.hstack([x, x_new])
+
+            # Directly estimate the mean and covariance matrix of X
+            mu_X = np.mean(X, axis=0)
+            cov_X = np.cov(np.transpose(X))
+
+            # Find mean of the joint distribution (p(x, x_new))
+            mu_x, mu_xnew = mu_X[0:self.D], mu_X[self.D:2 * self.D]
+
+            # Find covariance matrix of joint distribution (p(x, x_new))
+            (cov_x_x,
+             cov_x_xnew,
+             cov_xnew_x,
+             cov_xnew_xnew) = (cov_X[0:self.D, 0:self.D],
+                               cov_X[0:self.D, self.D:2 * self.D],
+                               cov_X[self.D:2 * self.D, 0:self.D],
+                               cov_X[self.D:2 * self.D, self.D:2 * self.D])
+
+            # Define new L-kernel
+            def L_logpdf(x, x_cond):
+
+                # Mean of approximately optimal L-kernel
+                mu = (mu_x + cov_x_xnew @ np.linalg.inv(cov_xnew_xnew) @
+                      (x_cond - mu_xnew))
+
+                # Variance of approximately optimal L-kernel
+                cov = (cov_x_x - cov_x_xnew @
+                         np.linalg.inv(cov_xnew_xnew) @ cov_xnew_x)
+
+                # Add ridge to avoid singularities
+                cov += np.eye(self.D) * 1e-6
+
+                # Log det covariance matrix
+                sign, logdet = np.linalg.slogdet(cov)
+                log_det_cov = sign * logdet
+
+                # Inverse covariance matrix
+                inv_cov = np.linalg.inv(cov)
+
+                # Find log pdf
+                logpdf = (-0.5 * log_det_cov -
+                          0.5 * (x - mu).T @ inv_cov @ (x - mu))
+
+                return logpdf
+
+            # Find new weights
+            for i in range(self.N):
+                logw_new[i] = (logw[i] +
+                               p_logpdf_x_new[i] -
+                               p_logpdf_x[i] +
+                               L_logpdf(x[i], x_new[i]) -
+                               self.q.logpdf(x_new[i], x[i]))
+
 
         # Use Monte-Carlo approximation of the optimal L-kernel
         if self.optL == 'monte-carlo':

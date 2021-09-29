@@ -3,13 +3,11 @@ import matplotlib.pyplot as plt
 import sys
 sys.path.append('..')  # noqa
 from scipy.stats import multivariate_normal as Normal_PDF
-from SMC_BASE import Target_Base, Q0_Base, Q_Base
-from SMC_OPT import *
-from SMC_OPT_MC import *
+from SMC_BASE import SMC, Target_Base, Q0_Base, Q_Base
 
 """
-Estimating the optimum L-kernel for a D-dimensional toy problem using the
-single_step proposal approach.
+Evaluating optimumal L-kernel approaches when tageting a
+D-dimensional Gaussian.
 
 P.L.Green
 """
@@ -68,11 +66,11 @@ N = 100
 K = 100
 
 # OptL SMC sampler with Gaussian approximation
-smc_gauss = SMC_OPT(N, D, p, q0, K, q)
+smc_gauss = SMC(N, D, p, q0, K, q, optL='gauss')
 smc_gauss.generate_samples()
 
 # OptL SMC sampler with Monte-Carlo approximation
-smc_mc = SMC_OPT_MC(N, D, p, q0, K, q)
+smc_mc = SMC(N, D, p, q0, K, q, optL='monte-carlo')
 smc_mc.generate_samples()
 
 # Plots of estimated mean

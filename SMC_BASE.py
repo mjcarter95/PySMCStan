@@ -2,6 +2,7 @@ import numpy as np
 import importance_sampling as IS
 from abc import abstractmethod, ABC
 
+
 class Target_Base(ABC):
     """
     Description
@@ -20,6 +21,7 @@ class Target_Base(ABC):
 
         """
         pass
+
 
 class Q0_Base(ABC):
     """
@@ -51,6 +53,7 @@ class Q0_Base(ABC):
         size : size of the sample being returned
         """
         pass
+
 
 class Q_Base(ABC):
     """
@@ -88,6 +91,7 @@ class Q_Base(ABC):
         """
 
         pass
+
 
 class SMC():
 
@@ -306,7 +310,7 @@ class SMC():
 
                 # Variance of approximately optimal L-kernel
                 cov = (cov_x_x - cov_x_xnew @
-                         np.linalg.inv(cov_xnew_xnew) @ cov_xnew_x)
+                       np.linalg.inv(cov_xnew_xnew) @ cov_xnew_x)
 
                 # Add ridge to avoid singularities
                 cov += np.eye(self.D) * 1e-6
@@ -331,7 +335,6 @@ class SMC():
                                p_logpdf_x[i] +
                                L_logpdf(x[i], x_new[i]) -
                                self.q.logpdf(x_new[i], x[i]))
-
 
         # Use Monte-Carlo approximation of the optimal L-kernel
         if self.optL == 'monte-carlo':

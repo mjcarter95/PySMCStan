@@ -6,6 +6,7 @@ A collection of methods that relate to importance sampling.
 P.L.Green
 """
 
+
 def normalise_weights(logw):
     """
     Description

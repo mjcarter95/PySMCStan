@@ -15,6 +15,7 @@ P.L.Green
 # Dimension of problem
 D = 10
 
+
 class Target(Target_Base):
     """ Define target """
 
@@ -30,7 +31,6 @@ class Q0(Q0_Base):
 
     def __init__(self):
         self.pdf = Normal_PDF(mean=np.zeros(D), cov=np.eye(D))
-
 
     def logpdf(self, x):
         return self.pdf.logpdf(x)
@@ -56,6 +56,7 @@ class Q(Q_Base):
 
     def rvs(self, x_cond):
         return x_cond + np.random.randn(D)
+
 
 p = Target()
 q0 = Q0()

@@ -12,6 +12,7 @@ P.L.Green
 
 np.random.seed(42)
 
+
 class Target(Target_Base):
     """ Define target """
 
@@ -30,7 +31,6 @@ class Q0(Q0_Base):
     def __init__(self):
         self.pdf = Normal_PDF(mean=np.zeros(2), cov=np.eye(2))
 
-
     def logpdf(self, x):
         return self.pdf.logpdf(x)
 
@@ -45,7 +45,7 @@ class Q(Q_Base):
         return (2 * np.pi)**-1 * np.exp(-0.5 * (x - x_cond).T @ (x - x_cond))
 
     def logpdf(self, x, x_cond):
-        return  -0.5 * (x - x_cond).T @ (x - x_cond)
+        return -0.5 * (x - x_cond).T @ (x - x_cond)
 
     def rvs(self, x_cond):
         return x_cond + np.random.randn(2)

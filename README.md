@@ -11,3 +11,4 @@
 
 ## Version 3
 - Automatic testing in Github
+- Introduced multi-modal example

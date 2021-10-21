@@ -1,6 +1,9 @@
 import numpy as np
 import importance_sampling as IS
 from SMC_TEMPLATES import Q_Base
+import Hamiltonian_proposal
+
+
 
 class SMC():
 

@@ -2,7 +2,6 @@ import numpy as np
 import importance_sampling as IS
 from abc import abstractmethod, ABC
 
-
 class Target_Base(ABC):
     """
     Description
@@ -54,14 +53,12 @@ class Q0_Base(ABC):
         """
         pass
 
-
 class Q_Base(ABC):
     """
     Description
     -----------
     This shows the methods that user will need to define to specify
     the general proposal distribution.
-
     """
 
     @abstractmethod
@@ -127,9 +124,6 @@ class SMC():
     generate_samples : runs the SMC sampler to generate weighted
         samples from the target.
 
-    propose_sample : proposes new samples, could probably remove in the
-        future.
-
     update_weights : updates the log weight associated with each sample
         i.e. evaluates the incremental weights.
 
@@ -138,7 +132,7 @@ class SMC():
     P.L.Green
     """
 
-    def __init__(self, N, D, p, q0, K, q, optL, verbose=False):
+    def __init__(self, N, D, p, q0, K, proposal, optL, verbose=False):
 
         # Assign variables to self
         self.N = N
@@ -146,9 +140,16 @@ class SMC():
         self.p = p
         self.q0 = q0
         self.K = K
-        self.q = q
         self.optL = optL
         self.verbose = verbose
+
+        if(isinstance(proposal, Q_Base)):
+            self.q = proposal
+        elif(proposal == 'rw'):
+            from proposals.random_walk import random_walk_proposal
+            self.q = random_walk_proposal(self.D)
+        #elif(proposal == 'hmc'):
+        #    self.q = hmc_proposal(self.D)
 
     def generate_samples(self):
 

@@ -60,7 +60,6 @@ p = Target()
 q0 = Q0()
 q = Q()
 
-
 def test_gauss_optL():
     """ Test the predictions made by an SMC sampler with Monte-Carlo
         approximation of the optimal L-kernel.
@@ -68,7 +67,7 @@ def test_gauss_optL():
     """
 
     # SMC sampler
-    smc = SMC(N, 2, p, q0, K, q, optL='gauss')
+    smc = SMC(N, 2, p, q0, K, proposal=q, optL='gauss')
     smc.generate_samples()
 
     # Check estimates
@@ -88,7 +87,7 @@ def test_monte_carlo_optL():
     """
 
     # SMC sampler
-    smc = SMC(N, 2, p, q0, K, q, optL='monte-carlo')
+    smc = SMC(N, 2, p, q0, K, proposal=q, optL='monte-carlo')
     smc.generate_samples()
 
     # Check estimates

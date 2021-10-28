@@ -6,7 +6,7 @@ from scipy.stats import multivariate_normal as Normal_PDF
 from SMC_BASE import SMC, Target_Base, Q0_Base, Q_Base
 
 """
-Evaluating optimumal L-kernel approaches when tageting a
+Evaluating optimal L-kernel approaches when targeting a
 D-dimensional Gaussian mixture.
 
 P.L.Green
@@ -47,7 +47,7 @@ class Target(Target_Base):
     def logpdf(self, x):
 
         logp = np.log(self.pi1 * self.pdf1.pdf(x) +
-                    self.pi2 * self.pdf2.pdf(x))
+                      self.pi2 * self.pdf2.pdf(x))
 
         return logp
 
@@ -63,7 +63,6 @@ class Q0(Q0_Base):
 
     def rvs(self, size):
         return self.pdf.rvs(size)
-
 
 class Q(Q_Base):
     """ Define general proposal """
@@ -83,7 +82,6 @@ class Q(Q_Base):
     def rvs(self, x_cond):
         return x_cond + np.random.randn(D)
 
-
 p = Target()
 q0 = Q0()
 q = Q()
@@ -93,11 +91,11 @@ N = 100
 K = 100
 
 # OptL SMC sampler with Gaussian approximation
-smc_gauss = SMC(N, D, p, q0, K, q, optL='gauss')
+smc_gauss = SMC(N, D, p, q0, K, proposal=q, optL='gauss')
 smc_gauss.generate_samples()
 
 # OptL SMC sampler with Monte-Carlo approximation
-smc_mc = SMC(N, D, p, q0, K, q, optL='monte-carlo')
+smc_mc = SMC(N, D, p, q0, K, proposal=q, optL='monte-carlo')
 smc_mc.generate_samples()
 
 # Plots of estimated mean

@@ -3,10 +3,10 @@ import matplotlib.pyplot as plt
 import sys
 sys.path.append('..')  # noqa
 from scipy.stats import multivariate_normal as Normal_PDF
-from SMC_BASE import SMC, Target_Base, Q0_Base, Q_Base
+from SMC_BASE import SMC, Target_Base, Q0_Base
 
 """
-Evaluating optimumal L-kernel approaches when tageting a
+Evaluating optimal L-kernel approaches when targeting a
 D-dimensional Gaussian.
 
 P.L.Green
@@ -38,40 +38,19 @@ class Q0(Q0_Base):
     def rvs(self, size):
         return self.pdf.rvs(size)
 
-
-class Q(Q_Base):
-    """ Define general proposal """
-
-    def pdf(self, x, x_cond):
-
-        dx = np.vstack(x - x_cond)
-        p = (2*np.pi)**(-D/2) * np.exp(-0.5 * dx.T @ dx)
-
-        return p[0]
-
-    def logpdf(self, x, x_cond):
-        dx = np.vstack(x - x_cond)
-        logp = -D/2 * np.log(2*np.pi) - 0.5 * dx.T @ dx
-        return logp
-
-    def rvs(self, x_cond):
-        return x_cond + np.random.randn(D)
-
-
 p = Target()
 q0 = Q0()
-q = Q()
 
 # No. samples and iterations
 N = 100
 K = 100
 
 # OptL SMC sampler with Gaussian approximation
-smc_gauss = SMC(N, D, p, q0, K, q, optL='gauss')
+smc_gauss = SMC(N, D, p, q0, K, proposal='rw', optL='gauss')
 smc_gauss.generate_samples()
 
 # OptL SMC sampler with Monte-Carlo approximation
-smc_mc = SMC(N, D, p, q0, K, q, optL='monte-carlo')
+smc_mc = SMC(N, D, p, q0, K, proposal='rw', optL='monte-carlo')
 smc_mc.generate_samples()
 
 # Plots of estimated mean

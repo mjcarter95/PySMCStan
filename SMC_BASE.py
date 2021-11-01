@@ -1,6 +1,7 @@
 import numpy as np
 import importance_sampling as IS
 from SMC_TEMPLATES import Q_Base
+from proposals.random_walk import random_walk_proposal
 
 class SMC():
 
@@ -58,7 +59,6 @@ class SMC():
         if(isinstance(proposal, Q_Base)):
             self.q = proposal
         elif(proposal == 'rw'):
-            from proposals.random_walk import random_walk_proposal
             self.q = random_walk_proposal(self.D)
         #elif(proposal == 'hmc'):
         #    self.q = hmc_proposal(self.D)

@@ -1,4 +1,4 @@
-from SMC_BASE import Q_Base
+from SMC_TEMPLATES import Q_Base
 import numpy as np
 
 

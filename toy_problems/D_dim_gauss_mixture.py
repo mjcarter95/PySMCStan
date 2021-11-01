@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 import sys
 sys.path.append('..')  # noqa
 from scipy.stats import multivariate_normal as Normal_PDF
-from SMC_BASE import SMC, Target_Base, Q0_Base, Q_Base
+from SMC_BASE import SMC
+from SMC_TEMPLATES import Target_Base, Q0_Base, Q_Base
 
 """
 Evaluating optimal L-kernel approaches when targeting a

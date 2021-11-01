@@ -1,7 +1,8 @@
-import numpy as np
+import autograd.numpy as np
 import importance_sampling as IS
 from SMC_TEMPLATES import Q_Base
 import Hamiltonian_proposal
+
 
 
 
@@ -63,8 +64,9 @@ class SMC():
         elif(proposal == 'rw'):
             from proposals.random_walk import random_walk_proposal
             self.q = random_walk_proposal(self.D)
-        #elif(proposal == 'hmc'):
-        #    self.q = hmc_proposal(self.D)
+        elif(proposal == 'hmc'):
+            from proposals.Hamiltonian import HMC_proposal
+            self.q = HMC_proposal(self.D, p)
 
     def generate_samples(self):
 

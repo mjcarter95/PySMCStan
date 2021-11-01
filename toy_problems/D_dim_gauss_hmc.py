@@ -1,22 +1,20 @@
-import numpy as np
+import autograd.numpy as np
 import matplotlib.pyplot as plt
 import sys
 sys.path.append('..')  # noqa
 from scipy.stats import multivariate_normal as Normal_PDF
-from SMC_BASE import SMC
-from SMC_TEMPLATES import Target_Base, Q0_Base
-
+from autograd.scipy.stats import multivariate_normal
+from SMC_BASE import SMC, Target_Base, Q0_Base
 
 """
 Evaluating optimal L-kernel approaches when targeting a
-D-dimensional Gaussian.
+D-dimensional Gaussian using a fixed-step HMC proposal.
 
-P.L.Green
+L.J.Devlin
 """
 
 # Dimension of problem
-D = 10
-
+D = 1
 
 class Target(Target_Base):
     """ Define target """
@@ -26,6 +24,9 @@ class Target(Target_Base):
 
     def logpdf(self, x):
         return self.pdf.logpdf(x)
+
+    def output(self, x):
+        return self._output(self.logpdf, x)
 
 
 class Q0(Q0_Base):
@@ -48,7 +49,8 @@ N = 100
 K = 100
 
 # OptL SMC sampler with Gaussian approximation
-smc_gauss = SMC(N, D, p, q0, K, proposal='rw', optL='gauss')
+smc_gauss = SMC(N, D, p, q0, K, proposal='hmc', optL='gauss')
+'''
 smc_gauss.generate_samples()
 
 # OptL SMC sampler with Monte-Carlo approximation
@@ -110,4 +112,4 @@ ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
 plt.tight_layout()
 
 plt.show()
-
+'''

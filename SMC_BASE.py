@@ -61,12 +61,16 @@ class SMC():
 
         if(isinstance(proposal, Q_Base)):
             self.q = proposal
+            self.proposal='user'
         elif(proposal == 'rw'):
             from proposals.random_walk import random_walk_proposal
             self.q = random_walk_proposal(self.D)
+            self.proposal = 'rw'
         elif(proposal == 'hmc'):
             from proposals.Hamiltonian import HMC_proposal
             self.q = HMC_proposal(self.D, p)
+            self.v_new = np.zeros([self.N, self.D])
+            self.proposal = 'hmc'
 
     def generate_samples(self):
 
@@ -163,12 +167,25 @@ class SMC():
                 x, p_logpdf_x, wn = IS.resample(x, p_logpdf_x, wn, self.N)
                 logw = np.log(wn)
 
+            # This is horrible, need to find a better way
             # Propose new samples
-            for i in range(self.N):
-                x_new[i] = self.q.rvs(x_cond=x[i])
+            if(self.proposal=='hmc'):
+                for i in range(self.N):
+                    x_new[i] = self.q.rvs(x_cond=x[i])
+                    self.v_new[i]=self.q.vf
+                    self.v_ini[i]=self.q.vi
+
+            else:
+                for i in range(self.N):
+                    x_new[i] = self.q.rvs(x_cond=x[i])
+
 
             # Make sure evaluations of likelihood are vectorised
             p_logpdf_x_new = self.p.logpdf(x_new)
+
+            
+            
+
 
             # Update log weights
             logw_new = self.update_weights(x, x_new, logw, p_logpdf_x,

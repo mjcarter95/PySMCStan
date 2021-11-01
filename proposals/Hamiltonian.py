@@ -49,14 +49,25 @@ class HMC_proposal(Q_Base):
         Returns a new sample state based on a standard normal Gaussian
         random walk.
         """
-        x_new, v_new, v_pdf = self.generate_HMC_samples(x_cond)
-        return x_new, v_new, v_pdf
+        x_new = self.generate_HMC_samples(x_cond)
+        return x_new 
 
 
     def generate_HMC_samples(self, x):
+        
+        """
+        Description
+        -----------
+        Handles the fixed step HMC proposal
+        """
+
         # Sample an initial velocity vector
         v = np.array(np.random.normal(0,1,self.D))
         v_pdf = multivariate_normal.logpdf(x, 0, 1)
+
+        # Too lazy to think of a better way to do this at the moment
+        # set the initial velocity as a member variable
+        self.vi_pdf = v_pdf
 
         # Calculate the initial gradient
         grad_x = self.gradient_finite_differece(x)
@@ -65,7 +76,10 @@ class HMC_proposal(Q_Base):
         for k in range(0,5):
             x, v, grad_x = self.Leapfrog(x, v, grad_x)
 
-        return x, v, v_pdf
+        self.vf = v
+
+        
+        return x
 
     def gradient_finite_differece(self, x):
         
@@ -82,6 +96,12 @@ class HMC_proposal(Q_Base):
     # Supporting functions - Will Likely move when introducing NUTS
 
     def Leapfrog(self, x, v, grad_x):
+        
+        """
+        Description
+        -----------
+        Performs a single Leapfrog step returning the final position, velocity and gradient.
+        """
         
         # We will hard-code the step-size for the moment
         h=0.1

@@ -1,7 +1,8 @@
 import numpy as np
 import sys
 sys.path.append('..')  # noqa
-from SMC_BASE import SMC, Target_Base, Q0_Base, Q_Base
+from SMC_BASE import SMC
+from SMC_TEMPLATES import Target_Base, Q0_Base, Q_Base
 from scipy.stats import multivariate_normal as Normal_PDF
 
 """

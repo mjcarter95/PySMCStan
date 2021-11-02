@@ -93,7 +93,7 @@ class Q_Base(ABC):
         Description
         -----------
         Set kernel parameters such that if q(x1 | x2) and L(x3 | x4), then
-        x1,x2,x3,x4 are returned.
+        x1,x2,x3,x4 are returned in that order.
         """
 
         pass

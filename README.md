@@ -16,3 +16,5 @@
 - SMC initializer now handles the incoming proposal type, including user-defined assuming it is based on Q_Base.
 - D_dim_gauss.py uses a random walk proposal, while D_dim_gauss_mixture.py, uses a user-defined proposal.
 - Changed test file to match new SMC class call.
+- Import templates for targets, prior and proposal from SMC_TEMPLATES
+- New memeber function for Q_base to set parameters of proposal distribution and backwards L-kernel

@@ -66,7 +66,7 @@ class Q0(Q0_Base):
         return self.pdf.rvs(size)
 
 class Q(Q_Base):
-    """ Define general proposal """
+    """ Define proposal """
 
     def pdf(self, x, x_cond):
 
@@ -81,7 +81,11 @@ class Q(Q_Base):
         return logp
 
     def rvs(self, x_cond):
+        self.x_cond = x_cond
         return x_cond + np.random.randn(D)
+    
+    def cond(self):
+        return self.x_cond
 
 p = Target()
 q0 = Q0()

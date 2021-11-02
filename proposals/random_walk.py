@@ -46,5 +46,13 @@ class random_walk_proposal(Q_Base):
         Returns a new sample state based on a standard normal Gaussian
         random walk.
         """
-
+        self.x_cond = x_cond
         return x_cond + np.random.randn(self.D)
+
+    def cond(self):
+        """
+        Description
+        -----------
+        Returns the initial position.
+        """
+        return self.x_cond

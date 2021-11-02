@@ -86,3 +86,13 @@ class Q_Base(ABC):
         """
 
         pass
+
+    @abstractmethod
+    def cond(self):
+        """
+        Description
+        -----------
+        Returns the conditional parameter x_cond for, q(x | x_cond) and L(x_cond | x).
+        """
+
+        pass

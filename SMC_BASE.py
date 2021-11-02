@@ -74,6 +74,7 @@ class SMC():
 
         # Initialise arrays
         x_new = np.zeros([self.N, self.D])
+        x_cond= np.zeros([self.N, self.D])
         lr = np.array([])
 
         # Initilise estimates of target mean and covariance matrix
@@ -136,12 +137,13 @@ class SMC():
             # Propose new samples
             for i in range(self.N):
                 x_new[i] = self.q.rvs(x_cond=x[i])
+                x_cond[i]= self.q.cond()
 
             # Make sure evaluations of likelihood are vectorised
             p_logpdf_x_new = self.p.logpdf(x_new)
 
             # Update log weights
-            logw_new = self.update_weights(x, x_new, logw, p_logpdf_x,
+            logw_new = self.update_weights(x_cond, x_new, logw, p_logpdf_x,
                                            p_logpdf_x_new)
 
             # Make sure that, if p.logpdf(x_new) is -inf, then logw_new

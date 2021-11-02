@@ -46,7 +46,7 @@ class random_walk_proposal(Q_Base):
         Returns a new sample state based on a standard normal Gaussian
         random walk.
         """
-        self.x_cond = x_cond
+        
         return x_cond + np.random.randn(self.D)
 
     def kernel_parameters(self, x, x_new):

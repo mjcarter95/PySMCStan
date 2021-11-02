@@ -81,7 +81,6 @@ class Q(Q_Base):
         return logp
 
     def rvs(self, x_cond):
-        self.x_cond = x_cond
         return x_cond + np.random.randn(D)
     
     def kernel_parameters(self, x, x_new):

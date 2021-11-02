@@ -88,11 +88,12 @@ class Q_Base(ABC):
         pass
 
     @abstractmethod
-    def cond(self):
+    def kernel_parameters(self, x, x_new):
         """
         Description
         -----------
-        Returns the conditional parameter x_cond for, q(x | x_cond) and L(x_cond | x).
+        Set kernel parameters such that if q(x1 | x2) and L(x3 | x4), then
+        x1,x2,x3,x4 are returned.
         """
 
         pass

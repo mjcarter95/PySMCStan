@@ -84,8 +84,8 @@ class Q(Q_Base):
         self.x_cond = x_cond
         return x_cond + np.random.randn(D)
     
-    def cond(self):
-        return self.x_cond
+    def kernel_parameters(self, x, x_new):
+        return x_new, x, x, x_new
 
 p = Target()
 q0 = Q0()

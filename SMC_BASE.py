@@ -10,6 +10,8 @@ class SMC():
     -----------
     A base class for an SMC sampler.
 
+    P.L.Green and L.J.Devlin
+
     Parameters
     ----------
     N : no. of samples generated at each iteration
@@ -73,8 +75,11 @@ class SMC():
         """
 
         # Initialise arrays
-        x_new = np.zeros([self.N, self.D])
-        x_cond= np.zeros([self.N, self.D])
+        x_new    = np.zeros([self.N, self.D])
+        q_x      = np.zeros([self.N, self.D])
+        q_x_cond = np.zeros([self.N, self.D])
+        L_x      = np.zeros([self.N, self.D])
+        L_x_cond = np.zeros([self.N, self.D])
         lr = np.array([])
 
         # Initilise estimates of target mean and covariance matrix
@@ -134,17 +139,18 @@ class SMC():
                 x, p_logpdf_x, wn = IS.resample(x, p_logpdf_x, wn, self.N)
                 logw = np.log(wn)
 
-            # Propose new samples
+            # Propose new samples, and get kernel (q/L) parameters
             for i in range(self.N):
-                x_new[i] = self.q.rvs(x_cond=x[i])
-                x_cond[i]= self.q.cond()
+                x_new[i]    = self.q.rvs(x_cond=x[i])
+                q_x[i], q_x_cond[i], L_x[i], L_x_cond[i] = self.q.kernel_parameters(x[i],x_new[i]) 
 
             # Make sure evaluations of likelihood are vectorised
             p_logpdf_x_new = self.p.logpdf(x_new)
 
             # Update log weights
-            logw_new = self.update_weights(x_cond, x_new, logw, p_logpdf_x,
-                                           p_logpdf_x_new)
+            logw_new = self.update_weights(x, x_new, logw, p_logpdf_x,
+                                           p_logpdf_x_new,q_x, q_x_cond,
+                                           L_x, L_x_cond)
 
             # Make sure that, if p.logpdf(x_new) is -inf, then logw_new
             # will also be -inf. Otherwise it is returned as NaN.
@@ -164,7 +170,7 @@ class SMC():
         self.logw = logw
 
     def update_weights(self, x, x_new, logw, p_logpdf_x,
-                       p_logpdf_x_new):
+                       p_logpdf_x_new, q_x, q_x_cond, L_x, L_x_cond):
         """
         Description
         -----------
@@ -248,9 +254,9 @@ class SMC():
                 logw_new[i] = (logw[i] +
                                p_logpdf_x_new[i] -
                                p_logpdf_x[i] +
-                               L_logpdf(x[i], x_new[i]) -
-                               self.q.logpdf(x_new[i], x[i]))
-
+                               L_logpdf(L_x[i], L_x_cond[i]) -
+                               self.q.logpdf(q_x[i], q_x_cond[i]))
+                              
         # Use Monte-Carlo approximation of the optimal L-kernel
         if self.optL == 'monte-carlo':
             for i in range(self.N):

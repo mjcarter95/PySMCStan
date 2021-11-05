@@ -50,4 +50,10 @@ class random_walk_proposal(Q_Base):
         return x_cond + np.random.randn(self.D)
 
     def kernel_parameters(self, x, x_new):
+        """
+        Description
+        -----------
+        Returns values required to calculate both the forward proposal distribution for a random walk proposal and the parameters required
+        to calculate the L-kernel. For a random walk proposal this equates to x_new and x for the proposal and x, and x_new for the L-kernel
+        """
         return x_new, x, x, x_new

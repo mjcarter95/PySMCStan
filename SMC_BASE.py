@@ -26,9 +26,9 @@ class SMC():
 
     q : general proposal distribution instance
 
-    q_x, q_x_cond: parameters of proposal distribution q( q_x, q_x_cond)
+    q_x, q_x_cond: Parameterisation of proposal distribution q( q_x| q_x_cond)
 
-    L_x, L_x_cond: parameters of proposal distribution L( L_x, L_x_cond)
+    L_x, L_x_cond: Parameterisation of L-kernel distribution L( L_x| L_x_cond)
 
     optL : approximation method for the optimal L-kernel. Can be either
         'gauss' or 'monte-carlo' (representing a Gaussian approximation

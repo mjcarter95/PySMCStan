@@ -92,8 +92,8 @@ class Q_Base(ABC):
         """
         Description
         -----------
-        Set kernel parameters such that if q(x1 | x2) and L(x3 | x4), then
-        x1,x2,x3,x4 are returned in that order.
+        Returns values required to calculate both the forward proposal distribution and the parameters required
+        to calculate the L-kernel. If q(X_{k} = x1 |X_{k-1} = x2) and L(X_{k-1} = x3 |X_{k} = x4), then return x1,x2,x3,x4
         """
 
         pass

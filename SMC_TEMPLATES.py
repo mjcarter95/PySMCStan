@@ -1,5 +1,12 @@
 from abc import abstractmethod, ABC
 
+"""
+Description
+-----------
+This module contains abstract methods for targets, initial proposals distributions 
+and general proposal distributions
+"""
+
 class Target_Base(ABC):
     """
     Description
@@ -83,17 +90,6 @@ class Q_Base(ABC):
         Description
         -----------
         Returns a single sample from the proposal, q(x | x_cond).
-        """
-
-        pass
-
-    @abstractmethod
-    def kernel_parameters(self, x, x_new):
-        """
-        Description
-        -----------
-        Returns values required to calculate both the forward proposal distribution and the parameters required
-        to calculate the L-kernel. If q(X_{k} = x1 |X_{k-1} = x2) and L(X_{k-1} = x3 |X_{k} = x4), then return x1,x2,x3,x4
         """
 
         pass

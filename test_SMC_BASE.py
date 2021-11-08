@@ -49,11 +49,8 @@ class Q(Q_Base):
         return -0.5 * (x - x_cond).T @ (x - x_cond)
 
     def rvs(self, x_cond):
-        self.x_cond = x_cond
         return x_cond + np.random.randn(2)
 
-    def kernel_parameters(self, x, x_new):
-        return x_new, x, x, x_new
 
 # No. samples and iterations
 N = 100

@@ -1,4 +1,4 @@
-from SMC_TEMPLATES import Q_Base
+from SMC_BASE import Q_Base
 import numpy as np
 
 
@@ -46,14 +46,5 @@ class random_walk_proposal(Q_Base):
         Returns a new sample state based on a standard normal Gaussian
         random walk.
         """
-        
-        return x_cond + np.random.randn(self.D)
 
-    def kernel_parameters(self, x, x_new):
-        """
-        Description
-        -----------
-        Returns values required to calculate both the forward proposal distribution for a random walk proposal and the parameters required
-        to calculate the L-kernel. For a random walk proposal this equates to x_new and x for the proposal and x, and x_new for the L-kernel
-        """
-        return x_new, x, x, x_new
+        return x_cond + np.random.randn(self.D)

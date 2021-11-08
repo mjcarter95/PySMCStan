@@ -1,7 +1,6 @@
 import numpy as np
 import importance_sampling as IS
 from SMC_TEMPLATES import Q_Base
-from proposals.random_walk import random_walk_proposal
 
 class SMC():
 
@@ -9,8 +8,6 @@ class SMC():
     Description
     -----------
     A base class for an SMC sampler.
-
-    P.L.Green and L.J.Devlin
 
     Parameters
     ----------
@@ -25,10 +22,6 @@ class SMC():
     K : no. iterations to run
 
     q : general proposal distribution instance
-
-    q_x, q_x_cond: Parameterisation of proposal distribution q( q_x| q_x_cond)
-
-    L_x, L_x_cond: Parameterisation of L-kernel distribution L( L_x| L_x_cond)
 
     optL : approximation method for the optimal L-kernel. Can be either
         'gauss' or 'monte-carlo' (representing a Gaussian approximation
@@ -65,6 +58,7 @@ class SMC():
         if(isinstance(proposal, Q_Base)):
             self.q = proposal
         elif(proposal == 'rw'):
+            from proposals.random_walk import random_walk_proposal
             self.q = random_walk_proposal(self.D)
         #elif(proposal == 'hmc'):
         #    self.q = hmc_proposal(self.D)
@@ -79,11 +73,7 @@ class SMC():
         """
 
         # Initialise arrays
-        x_new    = np.zeros([self.N, self.D])
-        q_x      = np.zeros([self.N, self.D])
-        q_x_cond = np.zeros([self.N, self.D])
-        L_x      = np.zeros([self.N, self.D])
-        L_x_cond = np.zeros([self.N, self.D])
+        x_new = np.zeros([self.N, self.D])
         lr = np.array([])
 
         # Initilise estimates of target mean and covariance matrix
@@ -143,18 +133,16 @@ class SMC():
                 x, p_logpdf_x, wn = IS.resample(x, p_logpdf_x, wn, self.N)
                 logw = np.log(wn)
 
-            # Propose new samples, and get kernel (q/L) parameters
+            # Propose new samples
             for i in range(self.N):
-                x_new[i]    = self.q.rvs(x_cond=x[i])
-                q_x[i], q_x_cond[i], L_x[i], L_x_cond[i] = self.q.kernel_parameters(x[i],x_new[i]) 
+                x_new[i] = self.q.rvs(x_cond=x[i])
 
             # Make sure evaluations of likelihood are vectorised
             p_logpdf_x_new = self.p.logpdf(x_new)
 
             # Update log weights
             logw_new = self.update_weights(x, x_new, logw, p_logpdf_x,
-                                           p_logpdf_x_new,q_x, q_x_cond,
-                                           L_x, L_x_cond)
+                                           p_logpdf_x_new)
 
             # Make sure that, if p.logpdf(x_new) is -inf, then logw_new
             # will also be -inf. Otherwise it is returned as NaN.
@@ -174,7 +162,7 @@ class SMC():
         self.logw = logw
 
     def update_weights(self, x, x_new, logw, p_logpdf_x,
-                       p_logpdf_x_new, q_x, q_x_cond, L_x, L_x_cond):
+                       p_logpdf_x_new):
         """
         Description
         -----------
@@ -258,9 +246,9 @@ class SMC():
                 logw_new[i] = (logw[i] +
                                p_logpdf_x_new[i] -
                                p_logpdf_x[i] +
-                               L_logpdf(L_x[i], L_x_cond[i]) -
-                               self.q.logpdf(q_x[i], q_x_cond[i]))
-                              
+                               L_logpdf(x[i], x_new[i]) -
+                               self.q.logpdf(x_new[i], x[i]))
+
         # Use Monte-Carlo approximation of the optimal L-kernel
         if self.optL == 'monte-carlo':
             for i in range(self.N):

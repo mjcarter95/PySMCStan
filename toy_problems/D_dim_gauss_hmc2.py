@@ -1,42 +1,48 @@
-import numpy as np
+from __future__ import absolute_import
+import autograd.numpy as np
 import matplotlib.pyplot as plt
 import sys
 sys.path.append('..')  # noqa
-from scipy.stats import multivariate_normal as Normal_PDF
+from autograd.scipy import stats as AutoStats
+from scipy.stats import multivariate_normal
+
 from SMC_BASE import SMC, Target_Base, Q0_Base
-from SMC_HMC_BASE import SMC_HMC
+from SMC_HMC_BASE_NEW import SMC_HMC
 
 """
 Evaluating optimal L-kernel approaches when targeting a
-D-dimensional Gaussian.
+D-dimensional Gaussian using a fixed step Hamiltonian proposal.
 
-P.L.Green
+L.J. Devlin
 """
 
 # Dimension of problem
-D = 20
+D = 1
+
 
 class Target(Target_Base):
     """ Define target """
 
     def __init__(self):
-        self.pdf = Normal_PDF(mean=np.repeat(2, D), cov=np.eye(D))
+        self.pdf = multivariate_normal(mean=np.repeat(2, D), cov=np.eye(D))
 
     def logpdf(self, x):
-        return self.pdf.logpdf(x)
+        return AutoStats.multivariate_normal.logpdf(x, mean=np.repeat(2, D), cov=np.eye(D))
 
 
 class Q0(Q0_Base):
     """ Define initial proposal """
 
     def __init__(self):
-        self.pdf = Normal_PDF(mean=np.zeros(D), cov=np.eye(D))
+        self.pdf = multivariate_normal(mean=np.zeros(D), cov=np.eye(D))
 
     def logpdf(self, x):
         return self.pdf.logpdf(x)
 
     def rvs(self, size):
         return self.pdf.rvs(size)
+
+
 
 p = Target()
 q0 = Q0()
@@ -45,10 +51,12 @@ q0 = Q0()
 N = 50
 K = 100
 
+
 # OptL SMC sampler with Gaussian approximation
 smc_gauss = SMC_HMC(N, D, p, q0, K, proposal='hmc', optL='gauss')
-smc_gauss.generate_samples()
+#smc_gauss.generate_samples()
 
+'''
 # OptL SMC sampler with Monte-Carlo approximation
 smc_mc = SMC_HMC(N, D, p, q0, K, proposal='hmc', optL='monte-carlo')
 smc_mc.generate_samples()
@@ -109,3 +117,4 @@ plt.tight_layout()
 
 plt.show()
 
+'''

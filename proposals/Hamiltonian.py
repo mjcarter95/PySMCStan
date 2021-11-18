@@ -63,11 +63,11 @@ class HMC_proposal(Q_Base):
 
         # Sample an initial velocity vector
         v = np.array(np.random.normal(0,1,self.D))
-        v_pdf = multivariate_normal.logpdf(x, 0, 1)
-
+        
         # Too lazy to think of a better way to do this at the moment
         # set the initial velocity as a member variable
-        self.vi_pdf = v_pdf
+        self.vi = v
+        self.v_pdf = multivariate_normal.logpdf(v, np.zeros(self.D), np.eye(self.D))
 
         # Calculate the initial gradient
         grad_x = self.gradient_finite_differece(x)
@@ -89,9 +89,10 @@ class HMC_proposal(Q_Base):
         Returns gradient at x using finte difference method.
         """
         
-        eps=1e-7
+        eps=1e-9
         
-        return (self.logpdf(x+eps) - self.logpdf(x))/eps
+        #return (self.logprob(x+eps) - self.logprob(x))/eps
+        return 2-x
 
     # Supporting functions - Will Likely move when introducing NUTS
 
@@ -104,7 +105,7 @@ class HMC_proposal(Q_Base):
         """
         
         # We will hard-code the step-size for the moment
-        h=0.1
+        h=0.4
         
         v = np.add(v, (h/2)*grad_x)
         x = np.add(x, h*v)

@@ -1,100 +1,11 @@
 import autograd.numpy as np
 import importance_sampling as IS
-from abc import abstractmethod, ABC
-from SMC_BASE import SMC 
+from abc import abstractmethod, ABC 
 from autograd.scipy.stats import multivariate_normal
-import time
+from SMC_TEMPLATES import Q_Base
 
 
-class Target_Base(ABC):
-    """
-    Description
-    -----------
-    This shows the methods that user will need to define to specify
-    the target distribution.
-
-    """
-
-    @abstractmethod
-    def logpdf(self, x):
-        """
-        Description
-        -----------
-        Returns log pdf of the target distribution, evaluated at x.
-
-        """
-        pass
-
-
-class Q0_Base(ABC):
-    """
-    Description
-    -----------
-    This shows the methods that user will need to define to specify
-    the initial proposal distribution.
-
-    """
-
-    @abstractmethod
-    def logpdf(self, x):
-        """
-        Description
-        -----------
-        Returns log pdf of the initial proposal, evaluated at x.
-        """
-        pass
-
-    @abstractmethod
-    def rvs(self, size):
-        """
-        Description
-        -----------
-        Returns samples from the initial proposal.
-
-        Parameters
-        ----------
-        size : size of the sample being returned
-        """
-        pass
-
-class Q_Base(ABC):
-    """
-    Description
-    -----------
-    This shows the methods that user will need to define to specify
-    the general proposal distribution.
-    """
-
-    @abstractmethod
-    def pdf(self, x, x_cond):
-        """
-        Description
-        -----------
-        Returns q(x | x_cond)
-        """
-        pass
-
-    @abstractmethod
-    def logpdf(self, x, x_cond):
-        """
-        Description
-        -----------
-        Returns log q(x | x_cond)
-        """
-        pass
-
-    @abstractmethod
-    def rvs(self, x_cond):
-        """
-        Description
-        -----------
-        Returns a single sample from the proposal, q(x | x_cond).
-        """
-
-        pass
-
-
-class SMC_HMC(SMC):
+class SMC_HMC():
 
     """
     Description
@@ -157,8 +68,6 @@ class SMC_HMC(SMC):
         elif(proposal == 'hmc'):
             from proposals.Hamiltonian import HMC_proposal
             self.q = HMC_proposal(self.D, p)
-            self.v_new = np.zeros([self.N, self.D])
-            self.v_ini = np.zeros([self.N, self.D])
             self.q_ini = np.zeros([self.N])
             self.proposal = 'hmc'
 
@@ -173,6 +82,8 @@ class SMC_HMC(SMC):
 
         # Initialise arrays
         x_new = np.zeros([self.N, self.D])
+        v_new = np.zeros([self.N, self.D])
+
         lr = np.array([])
 
         # Initilise estimates of target mean and covariance matrix
@@ -190,12 +101,14 @@ class SMC_HMC(SMC):
         self.Neff = np.zeros(self.K)
         self.resampling_points = np.array([])
 
-        # Sample from prior and find initial evaluations of the
+        # Sample x and v from prior and find initial evaluations of the
         # target and the prior. Note that, be default, we keep
         # the log weights vertically stacked.
         x = np.vstack(self.q0.rvs(size=self.N))
+        v = np.vstack(self.q0.rvs(size=self.N))
+        
         p_logpdf_x = np.vstack(self.p.logpdf(x))
-        p_q0_x = np.vstack(self.q0.logpdf(x))
+        p_q0_x = np.vstack(self.q0.logpdf(v))
 
         # Find weights of prior samples
         logw = p_logpdf_x - p_q0_x
@@ -236,10 +149,8 @@ class SMC_HMC(SMC):
             # Propose new samples
             if(self.proposal=='hmc'):
                 for i in range(self.N):
-                    x_new[i] = self.q.rvs(x_cond=x[i])
-                    self.v_new[i]=self.q.vf
-                    self.v_ini[i]=self.q.vi
-                    self.q_ini[i]=self.q.v_pdf
+                    X = np.hstack([x[i], v[i]])
+                    x_new[i], v_new[i] = self.q.rvs(x_cond=X)
 
             else:
                 for i in range(self.N):

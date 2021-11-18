@@ -6,7 +6,7 @@ sys.path.append('..')  # noqa
 from autograd.scipy import stats as AutoStats
 from scipy.stats import multivariate_normal
 
-from SMC_BASE import SMC, Target_Base, Q0_Base
+from SMC_TEMPLATES import Target_Base, Q0_Base
 from SMC_HMC_BASE_NEW import SMC_HMC
 
 """

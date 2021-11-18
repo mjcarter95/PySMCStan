@@ -54,7 +54,7 @@ K = 100
 
 # OptL SMC sampler with Gaussian approximation
 smc_gauss = SMC_HMC(N, D, p, q0, K, proposal='hmc', optL='gauss')
-#smc_gauss.generate_samples()
+smc_gauss.generate_samples()
 
 '''
 # OptL SMC sampler with Monte-Carlo approximation

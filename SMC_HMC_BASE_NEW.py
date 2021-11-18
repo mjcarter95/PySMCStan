@@ -3,7 +3,7 @@ import importance_sampling as IS
 from abc import abstractmethod, ABC 
 from autograd.scipy.stats import multivariate_normal
 from SMC_TEMPLATES import Q_Base
-
+import sys
 
 class SMC_HMC():
 
@@ -66,6 +66,7 @@ class SMC_HMC():
             self.q = random_walk_proposal(self.D)
             self.proposal = 'rw'
         elif(proposal == 'hmc'):
+            
             from proposals.Hamiltonian import HMC_proposal
             self.q = HMC_proposal(self.D, p)
             self.q_ini = np.zeros([self.N])
@@ -144,12 +145,15 @@ class SMC_HMC():
                                                    self.k)
                 x, p_logpdf_x, wn = IS.resample(x, p_logpdf_x, wn, self.N)
                 logw = np.log(wn)
+            print("Hello")
+            sys.exit(0)
 
-            # This is horrible, need to find a better way
-            # Propose new samples
             if(self.proposal=='hmc'):
+
+                X = np.hstack([x[i], v[i]])
+
                 for i in range(self.N):
-                    X = np.hstack([x[i], v[i]])
+
                     x_new[i], v_new[i] = self.q.rvs(x_cond=X)
 
             else:

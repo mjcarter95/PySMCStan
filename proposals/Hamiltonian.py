@@ -14,8 +14,11 @@ class HMC_proposal(Q_Base):
     """
 
     def __init__(self, D, p):
+        print("YES")
         self.D = D
-        self.logprob = p.logpdf
+        self.target = p
+        print(self.D)
+        print(self.target)
 
     def pdf(self, x, x_cond):
         """
@@ -49,8 +52,11 @@ class HMC_proposal(Q_Base):
         Returns a new sample state based on a standard normal Gaussian
         random walk.
         """
-        x_new = self.generate_HMC_samples(x_cond)
-        return x_new 
+        x = x_cond[:,0] 
+        v = x_cond[:,1] 
+
+        x_new, v_new = self.generate_HMC_samples(x, v)
+        return x_new, v_new
 
 
     def generate_HMC_samples(self, x):

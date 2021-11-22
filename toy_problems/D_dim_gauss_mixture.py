@@ -88,7 +88,7 @@ q0 = Q0()
 q = Q()
 
 # No. samples and iterations
-N = 100
+N = 10
 K = 100
 
 # OptL SMC sampler with Gaussian approximation

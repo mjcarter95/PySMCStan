@@ -1,7 +1,8 @@
+from re import X
 from SMC_BASE import Q_Base
 import autograd.numpy as np
-from autograd import elementwise_grad, grad 
-from autograd.scipy.stats import multivariate_normal
+from autograd import elementwise_grad as egrad
+import sys
 
 
 class HMC_proposal(Q_Base):
@@ -14,12 +15,9 @@ class HMC_proposal(Q_Base):
     """
 
     def __init__(self, D, p):
-        print("YES")
         self.D = D
         self.target = p
-        print(self.D)
-        print(self.target)
-
+        
     def pdf(self, x, x_cond):
         """
         Description
@@ -52,14 +50,16 @@ class HMC_proposal(Q_Base):
         Returns a new sample state based on a standard normal Gaussian
         random walk.
         """
-        x = x_cond[:,0] 
-        v = x_cond[:,1] 
+        x = x_cond[0,:] 
+        v = x_cond[1,:]
+        # fix to get D = 1 to work
+
 
         x_new, v_new = self.generate_HMC_samples(x, v)
         return x_new, v_new
 
 
-    def generate_HMC_samples(self, x):
+    def generate_HMC_samples(self, x, v):
         
         """
         Description
@@ -67,38 +67,16 @@ class HMC_proposal(Q_Base):
         Handles the fixed step HMC proposal
         """
 
-        # Sample an initial velocity vector
-        v = np.array(np.random.normal(0,1,self.D))
-        
-        # Too lazy to think of a better way to do this at the moment
-        # set the initial velocity as a member variable
-        self.vi = v
-        self.v_pdf = multivariate_normal.logpdf(v, np.zeros(self.D), np.eye(self.D))
-
         # Calculate the initial gradient
-        grad_x = self.gradient_finite_differece(x)
+        grad_x =  egrad(self.target.logpdf)(x)
 
         # Main leapfrog loop, fixed to 5 s steps
         for k in range(0,5):
+
             x, v, grad_x = self.Leapfrog(x, v, grad_x)
+        
+        return x, v
 
-        self.vf = v
-
-        
-        return x
-
-    def gradient_finite_differece(self, x):
-        
-        """
-        Description
-        -----------
-        Returns gradient at x using finte difference method.
-        """
-        
-        eps=1e-9
-        
-        #return (self.logprob(x+eps) - self.logprob(x))/eps
-        return 2-x
 
     # Supporting functions - Will Likely move when introducing NUTS
 
@@ -111,14 +89,11 @@ class HMC_proposal(Q_Base):
         """
         
         # We will hard-code the step-size for the moment
-        h=0.4
+        h=0.1
         
         v = np.add(v, (h/2)*grad_x)
         x = np.add(x, h*v)
-        grad_x = self.gradient_finite_differece(x)
+        grad_x = egrad(self.target.logpdf)(x)
         v = np.add(v, (h/2)*grad_x)
         
         return x, v, grad_x
-
-    def propose_step_size(x):
-        pass

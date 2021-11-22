@@ -1,100 +1,11 @@
 import autograd.numpy as np
 import importance_sampling as IS
-from abc import abstractmethod, ABC
-from SMC_BASE import SMC 
+from abc import abstractmethod, ABC 
 from autograd.scipy.stats import multivariate_normal
-import time
+from SMC_TEMPLATES import Q_Base
+import sys
 
-
-class Target_Base(ABC):
-    """
-    Description
-    -----------
-    This shows the methods that user will need to define to specify
-    the target distribution.
-
-    """
-
-    @abstractmethod
-    def logpdf(self, x):
-        """
-        Description
-        -----------
-        Returns log pdf of the target distribution, evaluated at x.
-
-        """
-        pass
-
-
-class Q0_Base(ABC):
-    """
-    Description
-    -----------
-    This shows the methods that user will need to define to specify
-    the initial proposal distribution.
-
-    """
-
-    @abstractmethod
-    def logpdf(self, x):
-        """
-        Description
-        -----------
-        Returns log pdf of the initial proposal, evaluated at x.
-        """
-        pass
-
-    @abstractmethod
-    def rvs(self, size):
-        """
-        Description
-        -----------
-        Returns samples from the initial proposal.
-
-        Parameters
-        ----------
-        size : size of the sample being returned
-        """
-        pass
-
-class Q_Base(ABC):
-    """
-    Description
-    -----------
-    This shows the methods that user will need to define to specify
-    the general proposal distribution.
-    """
-
-    @abstractmethod
-    def pdf(self, x, x_cond):
-        """
-        Description
-        -----------
-        Returns q(x | x_cond)
-        """
-        pass
-
-    @abstractmethod
-    def logpdf(self, x, x_cond):
-        """
-        Description
-        -----------
-        Returns log q(x | x_cond)
-        """
-        pass
-
-    @abstractmethod
-    def rvs(self, x_cond):
-        """
-        Description
-        -----------
-        Returns a single sample from the proposal, q(x | x_cond).
-        """
-
-        pass
-
-
-class SMC_HMC(SMC):
+class SMC_HMC():
 
     """
     Description
@@ -157,9 +68,6 @@ class SMC_HMC(SMC):
         elif(proposal == 'hmc'):
             from proposals.Hamiltonian import HMC_proposal
             self.q = HMC_proposal(self.D, p)
-            self.v_new = np.zeros([self.N, self.D])
-            self.v_ini = np.zeros([self.N, self.D])
-            self.q_ini = np.zeros([self.N])
             self.proposal = 'hmc'
 
     def generate_samples(self):
@@ -173,6 +81,8 @@ class SMC_HMC(SMC):
 
         # Initialise arrays
         x_new = np.zeros([self.N, self.D])
+        v_new = np.zeros([self.N, self.D])
+
         lr = np.array([])
 
         # Initilise estimates of target mean and covariance matrix
@@ -190,12 +100,14 @@ class SMC_HMC(SMC):
         self.Neff = np.zeros(self.K)
         self.resampling_points = np.array([])
 
-        # Sample from prior and find initial evaluations of the
+        # Sample x and v from prior and find initial evaluations of the
         # target and the prior. Note that, be default, we keep
         # the log weights vertically stacked.
         x = np.vstack(self.q0.rvs(size=self.N))
+        v = np.vstack(self.q0.rvs(size=self.N))
+
         p_logpdf_x = np.vstack(self.p.logpdf(x))
-        p_q0_x = np.vstack(self.q0.logpdf(x))
+        p_q0_x = np.vstack(self.q0.logpdf(v))
 
         # Find weights of prior samples
         logw = p_logpdf_x - p_q0_x
@@ -231,27 +143,18 @@ class SMC_HMC(SMC):
                                                    self.k)
                 x, p_logpdf_x, wn = IS.resample(x, p_logpdf_x, wn, self.N)
                 logw = np.log(wn)
-
-            # This is horrible, need to find a better way
-            # Propose new samples
+        
             if(self.proposal=='hmc'):
                 for i in range(self.N):
-                    x_new[i] = self.q.rvs(x_cond=x[i])
-                    self.v_new[i]=self.q.vf
-                    self.v_ini[i]=self.q.vi
-                    self.q_ini[i]=self.q.v_pdf
-
-            else:
-                for i in range(self.N):
-                    x_new[i] = self.q.rvs(x_cond=x[i])
-
+                    X = np.vstack([x[i], v[i]])
+                    x_new[i], v_new[i] = self.q.rvs(x_cond=X)
 
             # Make sure evaluations of likelihood are vectorised
             p_logpdf_x_new = self.p.logpdf(x_new)
 
             # Update log weights
-            logw_new = self.update_weights(-1*self.v_new, x_new, logw, p_logpdf_x,
-                                           p_logpdf_x_new, self.v_ini, x)
+            logw_new = self.update_weights(x, x_new, logw, p_logpdf_x,
+                                           p_logpdf_x_new, v, v_new)
 
             # Make sure that, if p.logpdf(x_new) is -inf, then logw_new
             # will also be -inf. Otherwise it is returned as NaN.
@@ -265,13 +168,15 @@ class SMC_HMC(SMC):
             x = np.copy(x_new)
             logw = np.copy(logw_new)
             p_logpdf_x = np.copy(p_logpdf_x_new)
+            v = np.vstack(self.q0.rvs(size=self.N))
 
         # Final quantities to be returned
         self.x = x
         self.logw = logw
 
+
     def update_weights(self, x, x_new, logw, p_logpdf_x,
-                       p_logpdf_x_new, v_old, x_old):
+                       p_logpdf_x_new, v, v_new):
         """
         Description
         -----------
@@ -305,7 +210,7 @@ class SMC_HMC(SMC):
         if self.optL == 'gauss':
 
             # Collect x and x_new together into X
-            X = np.hstack([x, x_new])
+            X = np.hstack([-v_new, x_new])
 
             # Directly estimate the mean and covariance matrix of X
             mu_X = np.mean(X, axis=0)
@@ -355,8 +260,8 @@ class SMC_HMC(SMC):
                 logw_new[i] = (logw[i] +
                                p_logpdf_x_new[i] -
                                p_logpdf_x[i] +
-                                L_logpdf(x[i], x_new[i]) -
-                               multivariate_normal.logpdf(v_old[i], np.zeros(self.D), np.eye(self.D)))
+                                L_logpdf(-v_new[i], x_new[i]) -
+                               self.q0.logpdf(v[i]))
 
         
         # Use Monte-Carlo approximation of the optimal L-kernel
@@ -368,21 +273,38 @@ class SMC_HMC(SMC):
                 # weight-update equation
                 den = np.zeros(1)
 
+                H0= -2*p_logpdf_x_new[i]+np.dot(v_new[i],v_new[i])
+
                 # Realise Monte-Carlo estimate of denominator
                 for j in range(self.N):
                     
-                    H= 2*(-p_logpdf_x_new[i]+p_logpdf_x[j]+0.5*np.dot(x[i],x[i]))
+                    H= 2*p_logpdf_x[j] + H0
+                      
                     if(H < 0):
                         continue
                     else:
+                        
                         v_other = np.sqrt(H)
-                        den+=multivariate_normal.pdf(v_other, np.zeros(1), np.eye(1))
+
+                        den+=multivariate_normal.pdf(v_other, 0.0, 1.0)
                                 
                 den /= self.N
 
                 # Calculate new log-weight
                 logw_new[i] = p_logpdf_x_new[i] - np.log(den)
 
+
+        # Use the forwards proposal as the L-kernel
+        if self.optL == 'forwards-proposal':
+            # Find new weights
+            for i in range(self.N):
+                logw_new[i] = (logw[i] +
+                               p_logpdf_x_new[i] -
+                               p_logpdf_x[i] +
+                               self.q0.logpdf(-v_new[i]) -
+                               self.q0.logpdf(v[i]))
+                
+                
         return logw_new
 
 

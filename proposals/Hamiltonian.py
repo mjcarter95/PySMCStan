@@ -1,8 +1,6 @@
-from re import X
 from SMC_BASE import Q_Base
 import autograd.numpy as np
 from autograd import elementwise_grad as egrad
-import sys
 
 
 class HMC_proposal(Q_Base):
@@ -14,9 +12,13 @@ class HMC_proposal(Q_Base):
 
     """
 
-    def __init__(self, D, p):
+    def __init__(self, D, p,h,k):
         self.D = D
         self.target = p
+        self.h=h
+        self.k=k
+        self.grad=egrad(self.target.logpdf)
+
         
     def pdf(self, x, x_cond):
         """
@@ -52,8 +54,6 @@ class HMC_proposal(Q_Base):
         """
         x = x_cond[0,:] 
         v = x_cond[1,:]
-        # fix to get D = 1 to work
-
 
         x_new, v_new = self.generate_HMC_samples(x, v)
         return x_new, v_new
@@ -68,10 +68,10 @@ class HMC_proposal(Q_Base):
         """
 
         # Calculate the initial gradient
-        grad_x =  egrad(self.target.logpdf)(x)
+        grad_x =  self.grad(x)
 
         # Main leapfrog loop, fixed to 5 s steps
-        for k in range(0,5):
+        for k in range(0,self.k):
 
             x, v, grad_x = self.Leapfrog(x, v, grad_x)
         
@@ -88,12 +88,9 @@ class HMC_proposal(Q_Base):
         Performs a single Leapfrog step returning the final position, velocity and gradient.
         """
         
-        # We will hard-code the step-size for the moment
-        h=0.1
-        
-        v = np.add(v, (h/2)*grad_x)
-        x = np.add(x, h*v)
-        grad_x = egrad(self.target.logpdf)(x)
-        v = np.add(v, (h/2)*grad_x)
+        v = np.add(v, (self.h/2)*grad_x)
+        x = np.add(x, self.h*v)
+        grad_x = self.grad(x)
+        v = np.add(v, (self.h/2)*grad_x)
         
         return x, v, grad_x

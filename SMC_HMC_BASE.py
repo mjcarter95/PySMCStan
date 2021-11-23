@@ -1,16 +1,14 @@
 import autograd.numpy as np
 import importance_sampling as IS
-from abc import abstractmethod, ABC 
 from autograd.scipy.stats import multivariate_normal
 from SMC_TEMPLATES import Q_Base
-import sys
 
 class SMC_HMC():
 
     """
     Description
     -----------
-    A base class for an SMC sampler.
+    A base class for an SMC sampler with a Hamiltonian proposal.
 
     Parameters
     ----------
@@ -44,10 +42,10 @@ class SMC_HMC():
 
     Author
     ------
-    P.L.Green
+    L.J. Devlin and P.L.Green
     """
 
-    def __init__(self, N, D, p, q0, K, proposal, optL, verbose=False):
+    def __init__(self, N, D, p, q0, K, h, k, proposal, optL, verbose=False):
 
         # Assign variables to self
         self.N = N
@@ -67,7 +65,7 @@ class SMC_HMC():
             self.proposal = 'rw'
         elif(proposal == 'hmc'):
             from proposals.Hamiltonian import HMC_proposal
-            self.q = HMC_proposal(self.D, p)
+            self.q = HMC_proposal(self.D, p, h, k)
             self.proposal = 'hmc'
 
     def generate_samples(self):
@@ -283,7 +281,7 @@ class SMC_HMC():
                     if(H < 0):
                         continue
                     else:
-                        
+                        #Calculate the velocity that would get from sample x^j to x^i
                         v_other = np.sqrt(H)
 
                         den+=multivariate_normal.pdf(v_other, 0.0, 1.0)
@@ -303,9 +301,5 @@ class SMC_HMC():
                                p_logpdf_x[i] +
                                self.q0.logpdf(-v_new[i]) -
                                self.q0.logpdf(v[i]))
-                
-                
+                        
         return logw_new
-
-
-        # H=Potential+

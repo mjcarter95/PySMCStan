@@ -16,7 +16,7 @@ L.J. Devlin
 """
 
 # Dimension of problem
-D = 10
+D = 2
 
 
 class Target(Target_Base):
@@ -50,17 +50,20 @@ q0 = Q0()
 N = 100
 K = 50
 
+# Step-size and number of Leapfrog steps
+h=0.1
+k=5
 
 # OptL SMC sampler with Monte-Carlo approximation
-smc_fp = SMC_HMC(N, D, p, q0, K, proposal='hmc', optL='forwards-proposal')
+smc_fp = SMC_HMC(N, D, p, q0, K, h, k, proposal='hmc', optL='forwards-proposal')
 smc_fp.generate_samples()
 
 # OptL SMC sampler with Gaussian approximation
-smc_gauss = SMC_HMC(N, D, p, q0, K, proposal='hmc', optL='gauss')
+smc_gauss = SMC_HMC(N, D, p, q0, K, h, k, proposal='hmc', optL='gauss')
 smc_gauss.generate_samples()
 
 # OptL SMC sampler with Monte-Carlo approximation
-smc_mc = SMC_HMC(N, D, p, q0, K, proposal='hmc', optL='monte-carlo', verbose = True)
+smc_mc = SMC_HMC(N, D, p, q0, K, h, k, proposal='hmc', optL='monte-carlo', verbose = True)
 smc_mc.generate_samples()
 
 # Plots of estimated mean

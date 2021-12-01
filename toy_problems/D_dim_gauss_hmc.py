@@ -16,7 +16,7 @@ L.J. Devlin
 """
 
 # Dimension of problem
-D = 2
+D = 10
 
 
 class Target(Target_Base):
@@ -47,12 +47,12 @@ p = Target()
 q0 = Q0()
 
 # No. samples and iterations
-N = 100
-K = 50
+N = 200
+K = 100
 
 # Step-size and number of Leapfrog steps
-h=0.1
-k=5
+h=0.2
+k=4
 
 # OptL SMC sampler with Monte-Carlo approximation
 smc_fp = SMC_HMC(N, D, p, q0, K, h, k, proposal='hmc', optL='forwards-proposal')
@@ -85,11 +85,11 @@ for i in range(3):
     ax[i].set_xlabel('Iteration')
     ax[i].set_ylabel('E[$x$]')
     if i == 0:
-        ax[i].set_title('(a)')
+        ax[i].set_title('Gaussian')
     if i == 1:
-        ax[i].set_title('(b)')
+        ax[i].set_title('Monte-Carlo')
     if i == 2:
-        ax[i].set_title('(c)')
+        ax[i].set_title('forwards-proposal')
 plt.tight_layout()
 
 # Plots of estimated diagonal elements of covariance matrix
@@ -111,22 +111,22 @@ for i in range(3):
     ax[i].set_xlabel('Iteration')
     ax[i].set_ylabel('Var[$x$]')
     if i == 0:
-        ax[i].set_title('(a)')
+        ax[i].set_title('Gaussian')
     if i == 1:
-        ax[i].set_title('(b)')
+        ax[i].set_title('Monte-Carlo')
     if i == 2:
-        ax[i].set_title('(c)')
+        ax[i].set_title('forwards-proposal')
 plt.tight_layout()
 
 
 # Plot of effective sample size
 fig, ax = plt.subplots()
 ax.plot(smc_gauss.Neff / smc_gauss.N, 'k',
-        label='Optimal L-kernel (Gaussian)')
+        label='Gaussian')
 ax.plot(smc_mc.Neff / smc_mc.N, 'r',
-        label='Optimal L-kernel (Monte-Carlo)')
+        label='Monte-Carlo')
 ax.plot(smc_fp.Neff / smc_mc.N, 'b',
-        label='Optimal L-kernel (forwards-proposal)')
+        label='forwards-proposal')
 ax.set_xlabel('Iteration')
 ax.set_ylabel('$N_{eff} / N$')
 ax.set_ylim([0, 1.1])

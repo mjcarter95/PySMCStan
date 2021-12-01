@@ -1,7 +1,10 @@
+from autograd.differential_operators import grad
 import autograd.numpy as np
 import importance_sampling as IS
 from autograd.scipy.stats import multivariate_normal
 from SMC_TEMPLATES import Q_Base
+from autograd import elementwise_grad as egrad
+import sys
 
 class SMC_HMC():
 
@@ -55,6 +58,7 @@ class SMC_HMC():
         self.K = K
         self.optL = optL
         self.verbose = verbose
+        self.T=h*k
 
         if(isinstance(proposal, Q_Base)):
             self.q = proposal
@@ -103,6 +107,7 @@ class SMC_HMC():
         # the log weights vertically stacked.
         x = np.vstack(self.q0.rvs(size=self.N))
         v = np.vstack(self.q0.rvs(size=self.N))
+        grad_x = np.vstack(self.q0.rvs(size=self.N))
 
         p_logpdf_x = np.vstack(self.p.logpdf(x))
         p_q0_x = np.vstack(self.q0.logpdf(v))
@@ -144,7 +149,8 @@ class SMC_HMC():
         
             if(self.proposal=='hmc'):
                 for i in range(self.N):
-                    X = np.vstack([x[i], v[i]])
+                    grad_x[i] = egrad(self.p.logpdf)(x[i])
+                    X = np.vstack([x[i], v[i], grad_x[i]])
                     x_new[i], v_new[i] = self.q.rvs(x_cond=X)
 
             # Make sure evaluations of likelihood are vectorised
@@ -152,7 +158,7 @@ class SMC_HMC():
 
             # Update log weights
             logw_new = self.update_weights(x, x_new, logw, p_logpdf_x,
-                                           p_logpdf_x_new, v, v_new)
+                                           p_logpdf_x_new, v, v_new, grad_x)
 
             # Make sure that, if p.logpdf(x_new) is -inf, then logw_new
             # will also be -inf. Otherwise it is returned as NaN.
@@ -174,7 +180,7 @@ class SMC_HMC():
 
 
     def update_weights(self, x, x_new, logw, p_logpdf_x,
-                       p_logpdf_x_new, v, v_new):
+                       p_logpdf_x_new, v, v_new, grad_x):
         """
         Description
         -----------
@@ -271,20 +277,14 @@ class SMC_HMC():
                 # weight-update equation
                 den = np.zeros(1)
 
-                H0= -2*p_logpdf_x_new[i]+np.dot(v_new[i],v_new[i])
-
+                #H0= -2*p_logpdf_x_new[i]+np.dot(v_new[i],v_new[i])
+                #final=egrad(self.p.logpdf)(x_new[i])
                 # Realise Monte-Carlo estimate of denominator
                 for j in range(self.N):
                     
-                    H= 2*p_logpdf_x[j] + H0
-                      
-                    if(H < 0):
-                        continue
-                    else:
-                        #Calculate the velocity that would get from sample x^j to x^i
-                        v_other = np.sqrt(H)
+                    v_other= (1/self.T)*(x_new[i]-x[j]) - (self.T/2)*grad_x[j]
 
-                        den+=multivariate_normal.pdf(v_other, 0.0, 1.0)
+                    den+=(multivariate_normal.pdf(v_other, mean=np.repeat(0, self.D), cov=np.eye(self.D))/self.T)
                                 
                 den /= self.N
 

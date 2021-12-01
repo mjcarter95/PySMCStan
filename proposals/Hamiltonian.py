@@ -54,12 +54,13 @@ class HMC_proposal(Q_Base):
         """
         x = x_cond[0,:] 
         v = x_cond[1,:]
+        grad_x=x_cond[2, :]
 
-        x_new, v_new = self.generate_HMC_samples(x, v)
+        x_new, v_new = self.generate_HMC_samples(x, v, grad_x)
         return x_new, v_new
 
 
-    def generate_HMC_samples(self, x, v):
+    def generate_HMC_samples(self, x, v, grad_x):
         
         """
         Description
@@ -68,7 +69,7 @@ class HMC_proposal(Q_Base):
         """
 
         # Calculate the initial gradient
-        grad_x =  self.grad(x)
+        #grad_x =  self.grad(x)
 
         # Main leapfrog loop, fixed to 5 s steps
         for k in range(0,self.k):

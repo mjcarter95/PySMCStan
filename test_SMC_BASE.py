@@ -41,23 +41,20 @@ class Q0(Q0_Base):
 
 class Q(Q_Base):
     """ Define general proposal """
-    
-    def __init__(self):
-        self.sigma_q = 0.5
 
     def pdf(self, x, x_cond):
-        return (2 * np.pi * self.sigma_q**2)**-0.5 * np.exp(-1 / (2 * self.sigma_q**2) * (x - x_cond).T @ (x - x_cond))
+        return (2 * np.pi)**-1 * np.exp(-0.5 * (x - x_cond).T @ (x - x_cond))
 
     def logpdf(self, x, x_cond):
-        return -1 / (2 * self.sigma_q**2) * (x - x_cond).T @ (x - x_cond)
+        return -0.5 * (x - x_cond).T @ (x - x_cond)
 
     def rvs(self, x_cond):
-        return x_cond + self.sigma_q * np.random.randn(2)
+        return x_cond + np.random.randn(2)
 
 
 # No. samples and iterations
 N = 100
-K = 500
+K = 20
 
 # Define problem
 p = Target()
@@ -70,26 +67,18 @@ def test_gauss_optL():
 
     """
 
-    pass
+    # SMC sampler
+    smc = SMC(N, 2, p, q0, K, proposal=q, optL='gauss')
+    smc.generate_samples()
 
-# SMC sampler
-smc = SMC(N, 2, p, q0, K, proposal=q, optL='gauss')
-smc.generate_samples()
-
-# Check estimates
-'''
-assert np.allclose(smc.mean_estimate_EES[-1], p.mean, atol=0.1)
-assert np.allclose(smc.var_estimate_EES[-1][0][0], p.cov[0][0],
-                   atol=0.2)
-assert np.allclose(smc.var_estimate[-1][1][1], p.cov[1][1],
-                   atol=0.2)
-assert np.allclose(smc.var_estimate[-1][0][1], p.cov[0][1],
-                   atol=0.2)
-'''
-from matplotlib import pyplot as plt
-plt.plot(smc.var_estimate_EES[:, 0, 0])
-plt.plot(np.array([0, K]), np.repeat(1, 2))
-plt.show()
+    # Check estimates
+    assert np.allclose(smc.mean_estimate_EES[-1], p.mean, atol=0.1)
+    assert np.allclose(smc.var_estimate_EES[-1][0][0], p.cov[0][0],
+                       atol=0.2)
+    assert np.allclose(smc.var_estimate[-1][1][1], p.cov[1][1],
+                       atol=0.2)
+    assert np.allclose(smc.var_estimate[-1][0][1], p.cov[0][1],
+                       atol=0.2)
 
 
 def test_monte_carlo_optL():

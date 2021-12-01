@@ -134,8 +134,17 @@ class SMC():
 
             # Loop to recalculate estimates of the variance / cov. matrix
             for k_dash in range(self.k + 1):
-                correction = (self.mean_estimate_EES[self.k] - self.mean_estimate[k_dash])**2
-                self.var_estimate_EES[self.k] += (c[k_dash] * (self.var_estimate[k_dash] + correction))
+
+                # Define a 'correction' term, to account for the bias that
+                # arises in the variance estimate as a result of using the
+                # estimated mean
+                correction = (self.mean_estimate_EES[self.k] -
+                              self.mean_estimate[k_dash])**2
+
+                # Variance estimate, including correction term
+                self.var_estimate_EES[self.k] += (c[k_dash] *
+                                                  (self.var_estimate[k_dash] + 
+                                                   correction))
             # --------------------------------------------------------------- #
 
             # Record effective sample size at kth iteration

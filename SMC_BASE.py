@@ -112,15 +112,26 @@ class SMC():
             (self.mean_estimate[self.k],
              self.var_estimate[self.k]) = IS.estimate(x, wn, self.D, self.N)
 
-            # EES recycling scheme
+            # --------------------------------------------------------------- #
+            # EES recycling scheme #
+
+            # Find the new values of l (equation (18) in
+            # https://arxiv.org/pdf/2004.12838.pdf)
             lr = np.append(lr, np.sum(wn)**2 / np.sum(wn**2))
-            lmbda = np.array([])
+
+            # Initialise c array (also defined by equation (18) in
+            # https://arxiv.org/pdf/2004.12838.pdf)
+            c = np.array([])
+
+            # Loop, recalculating c values and producing latest mean and
+            # variance estimates
             for k_dash in range(self.k + 1):
-                lmbda = np.append(lmbda, lr[k_dash] / np.sum(lr))
-                self.mean_estimate_EES[self.k] += (lmbda[k_dash] *
+                c = np.append(c, lr[k_dash] / np.sum(lr))
+                self.mean_estimate_EES[self.k] += (c[k_dash] *
                                                    self.mean_estimate[k_dash])
-                self.var_estimate_EES[self.k] += (lmbda[k_dash] *
+                self.var_estimate_EES[self.k] += (c[k_dash] *
                                                   self.var_estimate[k_dash])
+            # --------------------------------------------------------------- #
 
             # Record effective sample size at kth iteration
             self.Neff[self.k] = 1 / np.sum(np.square(wn))

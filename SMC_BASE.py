@@ -123,12 +123,17 @@ class SMC():
             # https://arxiv.org/pdf/2004.12838.pdf)
             c = np.array([])
 
-            # Loop, recalculating c values and producing latest mean and
-            # variance estimates
+            # Loop to recalculate the optimal c values
             for k_dash in range(self.k + 1):
                 c = np.append(c, lr[k_dash] / np.sum(lr))
+
+            # Loop to recalculate estimates of the mean
+            for k_dash in range(self.k + 1):
                 self.mean_estimate_EES[self.k] += (c[k_dash] *
                                                    self.mean_estimate[k_dash])
+
+            # Loop to recalculate estimates of the variance / cov. matrix
+            for k_dash in range(self.k + 1):
                 self.var_estimate_EES[self.k] += (c[k_dash] *
                                                   self.var_estimate[k_dash])
             # --------------------------------------------------------------- #

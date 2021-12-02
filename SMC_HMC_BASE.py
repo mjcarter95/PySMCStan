@@ -267,7 +267,6 @@ class SMC_HMC():
                                 L_logpdf(-v_new[i], x_new[i]) -
                                self.q0.logpdf(v[i]))
 
-        
         # Use Monte-Carlo approximation of the optimal L-kernel
         if self.optL == 'monte-carlo':
 
@@ -276,14 +275,11 @@ class SMC_HMC():
                 # Initialise what will be the denominator of our
                 # weight-update equation
                 den = np.zeros(1)
-
-                #H0= -2*p_logpdf_x_new[i]+np.dot(v_new[i],v_new[i])
-                #final=egrad(self.p.logpdf)(x_new[i])
+                
                 # Realise Monte-Carlo estimate of denominator
                 for j in range(self.N):
                     
                     v_other= (1/self.T)*(x_new[i]-x[j]) - (self.T/2)*grad_x[j]
-
                     den+=(multivariate_normal.pdf(v_other, mean=np.repeat(0, self.D), cov=np.eye(self.D))/self.T)
                                 
                 den /= self.N

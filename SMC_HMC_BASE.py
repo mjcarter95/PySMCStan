@@ -48,7 +48,7 @@ class SMC_HMC():
     L.J. Devlin and P.L.Green
     """
 
-    def __init__(self, N, D, p, q0, K, h, k, proposal, optL, verbose=False):
+    def __init__(self, N, D, p, q0, K, h, steps, proposal, optL, verbose=False):
 
         # Assign variables to self
         self.N = N
@@ -58,7 +58,7 @@ class SMC_HMC():
         self.K = K
         self.optL = optL
         self.verbose = verbose
-        self.T=h*k
+        self.T=h*steps
 
         if(isinstance(proposal, Q_Base)):
             self.q = proposal
@@ -69,7 +69,7 @@ class SMC_HMC():
             self.proposal = 'rw'
         elif(proposal == 'hmc'):
             from proposals.Hamiltonian import HMC_proposal
-            self.q = HMC_proposal(self.D, p, h, k)
+            self.q = HMC_proposal(self.D, p, h, steps)
             self.proposal = 'hmc'
 
     def generate_samples(self):
@@ -125,7 +125,7 @@ class SMC_HMC():
             wn = IS.normalise_weights(logw)
             (self.mean_estimate[self.k],
              self.var_estimate[self.k]) = IS.estimate(x, wn, self.D, self.N)
-
+            '''
             # EES recycling scheme
             lr = np.append(lr, np.sum(wn)**2 / np.sum(wn**2))
             lmbda = np.array([])
@@ -135,6 +135,43 @@ class SMC_HMC():
                                                    self.mean_estimate[k_dash])
                 self.var_estimate_EES[self.k] += (lmbda[k_dash] *
                                                   self.var_estimate[k_dash])
+            '''
+
+            # --------------------------------------------------------------- #
+            # EES recycling scheme #
+
+            # Find the new values of l (equation (18) in
+            # https://arxiv.org/pdf/2004.12838.pdf)
+            lr = np.append(lr, np.sum(wn)**2 / np.sum(wn**2))
+
+            # Initialise c array (also defined by equation (18) in
+            # https://arxiv.org/pdf/2004.12838.pdf)
+            c = np.array([])
+
+            # Loop to recalculate the optimal c values
+            for k_dash in range(self.k + 1):
+                c = np.append(c, lr[k_dash] / np.sum(lr))
+
+            # Loop to recalculate estimates of the mean
+            for k_dash in range(self.k + 1):
+                self.mean_estimate_EES[self.k] += (c[k_dash] *
+                                                   self.mean_estimate[k_dash])
+
+            # Loop to recalculate estimates of the variance / cov. matrix
+            for k_dash in range(self.k + 1):
+
+                # Define a 'correction' term, to account for the bias that
+                # arises in the variance estimate as a result of using the
+                # estimated mean
+                correction = (self.mean_estimate_EES[self.k] -
+                              self.mean_estimate[k_dash])**2
+
+                # Variance estimate, including correction term
+                self.var_estimate_EES[self.k] += (c[k_dash] *
+                                                  (self.var_estimate[k_dash] + 
+                                                   correction))
+
+            # --------------------------------------------------------------- #
 
             # Record effective sample size at kth iteration
             self.Neff[self.k] = 1 / np.sum(np.square(wn))
@@ -280,7 +317,7 @@ class SMC_HMC():
                 for j in range(self.N):
                     
                     v_other= (1/self.T)*(x_new[i]-x[j]) - (self.T/2)*grad_x[j]
-                    den+=(multivariate_normal.pdf(v_other, mean=np.repeat(0, self.D), cov=np.eye(self.D))/self.T)
+                    den+=(multivariate_normal.pdf(v_other, mean=np.repeat(0, self.D), cov=np.eye(self.D))/1)
                                 
                 den /= self.N
 

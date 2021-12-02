@@ -12,11 +12,11 @@ class HMC_proposal(Q_Base):
 
     """
 
-    def __init__(self, D, p,h,k):
+    def __init__(self, D, p,h,steps):
         self.D = D
         self.target = p
         self.h=h
-        self.k=k
+        self.steps=steps
         self.grad=egrad(self.target.logpdf)
 
         
@@ -72,7 +72,7 @@ class HMC_proposal(Q_Base):
         #grad_x =  self.grad(x)
 
         # Main leapfrog loop, fixed to 5 s steps
-        for k in range(0,self.k):
+        for k in range(0,self.steps):
 
             x, v, grad_x = self.Leapfrog(x, v, grad_x)
         

@@ -16,8 +16,7 @@ L.J. Devlin
 """
 
 # Dimension of problem
-D = 10
-
+D = 3
 
 class Target(Target_Base):
     """ Define target """
@@ -47,12 +46,12 @@ p = Target()
 q0 = Q0()
 
 # No. samples and iterations
-N = 200
-K = 100
+N = 100
+K = 100 
 
 # Step-size and number of Leapfrog steps
-h=0.2
-k=4
+h=0.1
+k= 5
 
 # OptL SMC sampler with Monte-Carlo approximation
 smc_fp = SMC_HMC(N, D, p, q0, K, h, k, proposal='hmc', optL='forwards-proposal')

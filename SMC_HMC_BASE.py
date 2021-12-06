@@ -48,7 +48,7 @@ class SMC_HMC():
     L.J. Devlin and P.L.Green
     """
 
-    def __init__(self, N, D, p, q0, K, h, steps, proposal, optL, verbose=False):
+    def __init__(self, N, D, p, q0, K, h, steps, M, proposal, optL, verbose=False):
 
         # Assign variables to self
         self.N = N
@@ -69,7 +69,7 @@ class SMC_HMC():
             self.proposal = 'rw'
         elif(proposal == 'hmc'):
             from proposals.Hamiltonian import HMC_proposal
-            self.q = HMC_proposal(self.D, p, h, steps)
+            self.q = HMC_proposal(self.D, p, h, steps, M)
             self.proposal = 'hmc'
 
     def generate_samples(self):
@@ -84,6 +84,7 @@ class SMC_HMC():
         # Initialise arrays
         x_new = np.zeros([self.N, self.D])
         v_new = np.zeros([self.N, self.D])
+        grad_x = np.zeros([self.N, self.D])
 
         lr = np.array([])
 
@@ -106,11 +107,10 @@ class SMC_HMC():
         # target and the prior. Note that, be default, we keep
         # the log weights vertically stacked.
         x = np.vstack(self.q0.rvs(size=self.N))
-        v = np.vstack(self.q0.rvs(size=self.N))
-        grad_x = np.vstack(self.q0.rvs(size=self.N))
+        v = np.vstack(self.q.v_rvs(size=self.N))
 
         p_logpdf_x = np.vstack(self.p.logpdf(x))
-        p_q0_x = np.vstack(self.q0.logpdf(v))
+        p_q0_x = np.vstack(self.q.v_logpdf(v))
 
         # Find weights of prior samples
         logw = p_logpdf_x - p_q0_x
@@ -125,17 +125,6 @@ class SMC_HMC():
             wn = IS.normalise_weights(logw)
             (self.mean_estimate[self.k],
              self.var_estimate[self.k]) = IS.estimate(x, wn, self.D, self.N)
-            '''
-            # EES recycling scheme
-            lr = np.append(lr, np.sum(wn)**2 / np.sum(wn**2))
-            lmbda = np.array([])
-            for k_dash in range(self.k + 1):
-                lmbda = np.append(lmbda, lr[k_dash] / np.sum(lr))
-                self.mean_estimate_EES[self.k] += (lmbda[k_dash] *
-                                                   self.mean_estimate[k_dash])
-                self.var_estimate_EES[self.k] += (lmbda[k_dash] *
-                                                  self.var_estimate[k_dash])
-            '''
 
             # --------------------------------------------------------------- #
             # EES recycling scheme #
@@ -209,7 +198,7 @@ class SMC_HMC():
             x = np.copy(x_new)
             logw = np.copy(logw_new)
             p_logpdf_x = np.copy(p_logpdf_x_new)
-            v = np.vstack(self.q0.rvs(size=self.N))
+            v = np.vstack(self.q.v_rvs(size=self.N))
 
         # Final quantities to be returned
         self.x = x
@@ -302,7 +291,7 @@ class SMC_HMC():
                                p_logpdf_x_new[i] -
                                p_logpdf_x[i] +
                                 L_logpdf(-v_new[i], x_new[i]) -
-                               self.q0.logpdf(v[i]))
+                               self.q.v_logpdf(v[i]))
 
         # Use Monte-Carlo approximation of the optimal L-kernel
         if self.optL == 'monte-carlo':
@@ -316,8 +305,10 @@ class SMC_HMC():
                 # Realise Monte-Carlo estimate of denominator
                 for j in range(self.N):
                     
+                    #Calculate approx velocity to move from x^j to x^i
                     v_other= (1/self.T)*(x_new[i]-x[j]) - (self.T/2)*grad_x[j]
-                    den+=(multivariate_normal.pdf(v_other, mean=np.repeat(0, self.D), cov=np.eye(self.D))/1)
+                    
+                    den+=self.q.v_pdf(v_other)
                                 
                 den /= self.N
 
@@ -332,7 +323,7 @@ class SMC_HMC():
                 logw_new[i] = (logw[i] +
                                p_logpdf_x_new[i] -
                                p_logpdf_x[i] +
-                               self.q0.logpdf(-v_new[i]) -
-                               self.q0.logpdf(v[i]))
+                               self.q.v_logpdf(-v_new[i]) - 
+                               self.q.v_logpdf(v[i]))
                         
         return logw_new

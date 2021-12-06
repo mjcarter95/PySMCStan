@@ -16,7 +16,7 @@ L.J. Devlin
 """
 
 # Dimension of problem
-D = 3
+D = 6
 
 class Target(Target_Base):
     """ Define target """
@@ -24,6 +24,7 @@ class Target(Target_Base):
     def __init__(self):
         self.pdf = multivariate_normal(mean=np.repeat(2, D), cov=np.eye(D))
 
+    # For the autodiff to work we need to redefine the target such that it is boxed for differentiation
     def logpdf(self, x):
         return AutoStats.multivariate_normal.logpdf(x, mean=np.repeat(2, D), cov=np.eye(D))
 
@@ -47,22 +48,24 @@ q0 = Q0()
 
 # No. samples and iterations
 N = 100
-K = 100 
+K = 100
 
-# Step-size and number of Leapfrog steps
-h=0.1
-k= 5
+
+# Step-size (h), number of Leapfrog steps (k), and variance of velocity distribution (M)
+h=0.5
+k= 1
+M = 1
 
 # OptL SMC sampler with Monte-Carlo approximation
-smc_fp = SMC_HMC(N, D, p, q0, K, h, k, proposal='hmc', optL='forwards-proposal')
+smc_fp = SMC_HMC(N, D, p, q0, K, h, k, M, proposal='hmc', optL='forwards-proposal')
 smc_fp.generate_samples()
 
 # OptL SMC sampler with Gaussian approximation
-smc_gauss = SMC_HMC(N, D, p, q0, K, h, k, proposal='hmc', optL='gauss')
+smc_gauss = SMC_HMC(N, D, p, q0, K, h, k, M, proposal='hmc', optL='gauss')
 smc_gauss.generate_samples()
 
 # OptL SMC sampler with Monte-Carlo approximation
-smc_mc = SMC_HMC(N, D, p, q0, K, h, k, proposal='hmc', optL='monte-carlo', verbose = True)
+smc_mc = SMC_HMC(N, D, p, q0, K, h, k, M, proposal='hmc', optL='monte-carlo', verbose = True)
 smc_mc.generate_samples()
 
 # Plots of estimated mean
@@ -91,6 +94,7 @@ for i in range(3):
         ax[i].set_title('forwards-proposal')
 plt.tight_layout()
 
+
 # Plots of estimated diagonal elements of covariance matrix
 fig, ax = plt.subplots(ncols=3)
 for i in range(3):
@@ -117,7 +121,6 @@ for i in range(3):
         ax[i].set_title('forwards-proposal')
 plt.tight_layout()
 
-
 # Plot of effective sample size
 fig, ax = plt.subplots()
 ax.plot(smc_gauss.Neff / smc_gauss.N, 'k',
@@ -131,5 +134,6 @@ ax.set_ylabel('$N_{eff} / N$')
 ax.set_ylim([0, 1.1])
 ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
 plt.tight_layout()
+
 
 plt.show()

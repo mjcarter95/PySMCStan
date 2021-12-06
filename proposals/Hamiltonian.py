@@ -1,7 +1,7 @@
 from SMC_BASE import Q_Base
 import autograd.numpy as np
 from autograd import elementwise_grad as egrad
-
+from scipy.stats import multivariate_normal
 
 class HMC_proposal(Q_Base):
 
@@ -12,12 +12,13 @@ class HMC_proposal(Q_Base):
 
     """
 
-    def __init__(self, D, p,h,steps):
+    def __init__(self, D, p,h,steps, M):
         self.D = D
         self.target = p
         self.h=h
         self.steps=steps
         self.grad=egrad(self.target.logpdf)
+        self.v_dist = multivariate_normal(mean=np.zeros(D), cov=M*np.eye(D))
 
         
     def pdf(self, x, x_cond):
@@ -68,9 +69,6 @@ class HMC_proposal(Q_Base):
         Handles the fixed step HMC proposal
         """
 
-        # Calculate the initial gradient
-        #grad_x =  self.grad(x)
-
         # Main leapfrog loop, fixed to 5 s steps
         for k in range(0,self.steps):
 
@@ -95,3 +93,33 @@ class HMC_proposal(Q_Base):
         v = np.add(v, (self.h/2)*grad_x)
         
         return x, v, grad_x
+
+    def v_rvs(self, size):
+
+        """
+        Description
+        -----------
+        Draw a sample from the velocity/momentum distribution
+        """
+        
+        return self.v_dist.rvs(size)
+
+    def v_pdf(self, x):
+        
+        """
+        Description
+        -----------
+        Calculate pdf of velocity/momentum distribution
+        """
+         
+        return self.v_dist.pdf(x)
+
+    def v_logpdf(self, x):
+        
+        """
+        Description
+        -----------
+        Calculate logpdf of velocity/momentum distribution
+        """
+
+        return self.v_dist.logpdf(x)

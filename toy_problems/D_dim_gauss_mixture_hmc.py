@@ -1,3 +1,4 @@
+#from __future__ import absolute_import
 import autograd.numpy as np
 import matplotlib.pyplot as plt
 import sys
@@ -9,20 +10,50 @@ from SMC_HMC_BASE import SMC_HMC
 
 """
 Evaluating optimal L-kernel approaches when targeting a
-D-dimensional Gaussian using a fixed step Hamiltonian proposal.
+D-dimensional Gaussian mixture.
 
-L.J. Devlin
+L.J.Devlin and P.L.Green
 """
 
 # Dimension of problem
-D = 10
+D = 2
+
 
 class Target(Target_Base):
     """ Define target """
 
+    def __init__(self):
+        # Means
+        self.mu1 = np.vstack(np.repeat(2, D))
+        self.mu2 = np.vstack(np.repeat(-2, D))
+
+        # Covariance matrices
+        self.cov1 = np.eye(D)
+        self.cov2 = np.eye(D)
+
+         # Mixture contributions
+        self.pi1 = 0.5
+        self.pi2 = 0.5
+
+        # True mean of the mixture
+        self.mu = self.pi1 * self.mu1 + self.pi2 * self.mu2
+
+        # True covariance matrix of the mixture
+        self.cov = (self.pi1 * (self.cov1 + self.mu1 @ self.mu1.T) +
+                    self.pi2 * (self.cov2 + self.mu2 @ self.mu2.T))
+
+
     # For the autodiff to work we need to box the target into one function
     def logpdf(self, x):
-        return AutoStats.multivariate_normal.logpdf(x, mean=np.repeat(2, D), cov=np.eye(D))
+        
+        # Components of the Gaussian mixture
+        pdf1 = AutoStats.multivariate_normal.pdf(x,mean=self.mu1[:, 0], cov=self.cov1)
+        pdf2 = AutoStats.multivariate_normal.pdf(x, mean=self.mu2[:, 0], cov=self.cov2)
+
+
+        logp = np.log(self.pi1 * pdf1 + self.pi2 * pdf2)
+
+        return logp
 
 
 class Q0(Q0_Base):
@@ -37,15 +68,12 @@ class Q0(Q0_Base):
     def rvs(self, size):
         return self.pdf.rvs(size)
 
-
-
 p = Target()
 q0 = Q0()
 
 # No. samples and iterations
 N = 100
 K = 100
-
 
 # Step-size (h), number of Leapfrog steps (k), and variance of velocity distribution (M)
 h=0.2
@@ -77,9 +105,8 @@ for i in range(3):
         if i == 2:
             ax[i].plot(smc_fp.mean_estimate_EES[:, d], 'b',
                        alpha=0.5)
-    ax[i].plot(np.repeat(2, K), 'lime', linewidth=3.0,
-               linestyle='--')
-    ax[i].set_ylim([-2, 5])
+        ax[i].plot(np.repeat(p.mu[d], K), 'lime', linewidth=3.0, linestyle='--')
+    ax[i].set_ylim([-3, 3])
     ax[i].set_xlabel('Iteration')
     ax[i].set_ylabel('E[$x$]')
     if i == 0:
@@ -104,9 +131,9 @@ for i in range(3):
         if i == 2:
             ax[i].plot(smc_fp.var_estimate_EES[:, d, d], 'b',
                        alpha=0.5)
-    ax[i].plot(np.repeat(1, K), 'lime', linewidth=3.0,
+        ax[i].plot(np.repeat(p.cov[d, d], K), 'lime', linewidth=3.0,
                linestyle='--')
-    ax[i].set_ylim([0, 2])
+    ax[i].set_ylim([0, 10])
     ax[i].set_xlabel('Iteration')
     ax[i].set_ylabel('Var[$x$]')
     if i == 0:

@@ -43,7 +43,7 @@ class Q(Q_Base):
     """ Define general proposal """
 
     def pdf(self, x, x_cond):
-        return (2 * np.pi)**-1 * np.exp(-0.5 * (x - x_cond).T @ (x - x_cond))
+        return (2 * np.pi)**-0.5 * np.exp(-0.5 * (x - x_cond).T @ (x - x_cond))
 
     def logpdf(self, x, x_cond):
         return -0.5 * (x - x_cond).T @ (x - x_cond)

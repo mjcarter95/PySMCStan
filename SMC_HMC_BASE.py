@@ -25,6 +25,12 @@ class SMC_HMC():
 
     K : no. iterations to run
 
+    h: Step-size of the Leapfrog method
+
+    steps: Total number of steps before stopping
+
+    Cov: scale of the diagonal matrix to generate samples from the momentum distribution
+
     q : general proposal distribution instance
 
     optL : approximation method for the optimal L-kernel. Can be either
@@ -48,7 +54,7 @@ class SMC_HMC():
     L.J. Devlin and P.L.Green
     """
 
-    def __init__(self, N, D, p, q0, K, h, steps, M, proposal, optL, verbose=False):
+    def __init__(self, N, D, p, q0, K, h, steps, Cov, proposal, optL, verbose=False):
 
         # Assign variables to self
         self.N = N
@@ -69,7 +75,7 @@ class SMC_HMC():
             self.proposal = 'rw'
         elif(proposal == 'hmc'):
             from proposals.Hamiltonian import HMC_proposal
-            self.q = HMC_proposal(self.D, p, h, steps, M)
+            self.q = HMC_proposal(self.D, p, h, steps, Cov)
             self.proposal = 'hmc'
 
     def generate_samples(self):
@@ -84,7 +90,7 @@ class SMC_HMC():
         # Initialise arrays
         x_new = np.zeros([self.N, self.D])
         v_new = np.zeros([self.N, self.D])
-        grad_x = np.zeros([self.N, self.D])
+        grad_x = np.zeros([self.N, self.D]) 
 
         lr = np.array([])
 
@@ -219,7 +225,13 @@ class SMC_HMC():
         ----------
         x : samples from the previous iteration
 
+        v : velocity samples from the previous iteration
+
         x_new : samples from the current iteration
+
+        v_new : velocity samples from the current iteration
+
+        grad_x : gradient value at x
 
         logw : low importance weights associated with x
 

@@ -75,21 +75,21 @@ q0 = Q0()
 N = 100
 K = 100
 
-# Step-size (h), number of Leapfrog steps (k), and variance of velocity distribution (M)
+# Step-size (h), number of Leapfrog steps (k), and covariance of velocity distribution (Cov)
 h=0.2
 k= 3
-M = 1
+Cov = 1
 
 # OptL SMC sampler with Monte-Carlo approximation
-smc_fp = SMC_HMC(N, D, p, q0, K, h, k, M, proposal='hmc', optL='forwards-proposal')
+smc_fp = SMC_HMC(N, D, p, q0, K, h, k, Cov, proposal='hmc', optL='forwards-proposal')
 smc_fp.generate_samples()
 
 # OptL SMC sampler with Gaussian approximation
-smc_gauss = SMC_HMC(N, D, p, q0, K, h, k, M, proposal='hmc', optL='gauss')
+smc_gauss = SMC_HMC(N, D, p, q0, K, h, k, Cov, proposal='hmc', optL='gauss')
 smc_gauss.generate_samples()
 
 # OptL SMC sampler with Monte-Carlo approximation
-smc_mc = SMC_HMC(N, D, p, q0, K, h, k, M, proposal='hmc', optL='monte-carlo')
+smc_mc = SMC_HMC(N, D, p, q0, K, h, k, Cov, proposal='hmc', optL='monte-carlo')
 smc_mc.generate_samples()
 
 # Plots of estimated mean

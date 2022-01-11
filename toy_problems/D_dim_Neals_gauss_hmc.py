@@ -9,7 +9,7 @@ from SMC_HMC_BASE import SMC_HMC
 
 """
 Evaluating optimal L-kernel approaches when targeting a
-D-dimensional Gaussian using a fixed step Hamiltonian proposal.
+D-dimensional Gaussian increasing covariance along the diagnonal using a fixed step Hamiltonian proposal.
 
 L.J. Devlin
 """
@@ -22,7 +22,7 @@ class Target(Target_Base):
 
     # For the autodiff to work we need to box the target into one function
     def logpdf(self, x):
-        return AutoStats.multivariate_normal.logpdf(x, mean=np.repeat(2, D), cov=np.eye(D))
+        return AutoStats.multivariate_normal.logpdf(x, mean=np.repeat(0, D), cov=np.diag(np.linspace(0.1,1,D)))
 
 
 class Q0(Q0_Base):
@@ -77,7 +77,7 @@ for i in range(3):
         if i == 2:
             ax[i].plot(smc_fp.mean_estimate_EES[:, d], 'b',
                        alpha=0.5)
-    ax[i].plot(np.repeat(2, K), 'lime', linewidth=3.0,
+    ax[i].plot(np.repeat(0, K), 'lime', linewidth=3.0,
                linestyle='--')
     ax[i].set_ylim([-2, 5])
     ax[i].set_xlabel('Iteration')
@@ -104,8 +104,6 @@ for i in range(3):
         if i == 2:
             ax[i].plot(smc_fp.var_estimate_EES[:, d, d], 'b',
                        alpha=0.5)
-    ax[i].plot(np.repeat(1, K), 'lime', linewidth=3.0,
-               linestyle='--')
     ax[i].set_ylim([0, 2])
     ax[i].set_xlabel('Iteration')
     ax[i].set_ylabel('Var[$x$]')

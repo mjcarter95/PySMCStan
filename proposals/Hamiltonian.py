@@ -12,13 +12,13 @@ class HMC_proposal(Q_Base):
 
     """
 
-    def __init__(self, D, p,h,steps, M):
+    def __init__(self, D, p,h,steps, Cov):
         self.D = D
         self.target = p
         self.h=h
         self.steps=steps
         self.grad=egrad(self.target.logpdf)
-        self.v_dist = multivariate_normal(mean=np.zeros(D), cov=M*np.eye(D))
+        self.v_dist = multivariate_normal(mean=np.zeros(D), cov=Cov*np.eye(D))
 
         
     def pdf(self, x, x_cond):

@@ -20,6 +20,8 @@ class SMC_HMC():
 
     q0 : initial proposal instance
 
+    grad_x: Gradient of the target distribution w.r.t. x
+
     v: Velocity distribution, initial distribution sampled from a standard Normal distribution.
 
     K : no. iterations to run
@@ -252,7 +254,7 @@ class SMC_HMC():
             # Find mean of the joint distribution (p(x, x_new))
             mu_x, mu_xnew = mu_X[0:self.D], mu_X[self.D:2 * self.D]
 
-            # Find covariance matrix of joint distribution (p(x, x_new))
+            # Find covariance matrix of joint distribution (p(-v_new, x_new))
             (cov_x_x,
              cov_x_xnew,
              cov_xnew_x,

@@ -255,9 +255,9 @@ class SMC_HMC():
             mu_x, mu_xnew = mu_X[0:self.D], mu_X[self.D:2 * self.D]
 
             # Find covariance matrix of joint distribution (p(-v_new, x_new))
-            (cov_x_x,
-             cov_x_xnew,
-             cov_xnew_x,
+            (cov_negvnew_negv,
+             cov_negvnew_xnew,
+             cov_xnew_negvnew,
              cov_xnew_xnew) = (cov_X[0:self.D, 0:self.D],
                                cov_X[0:self.D, self.D:2 * self.D],
                                cov_X[self.D:2 * self.D, 0:self.D],
@@ -267,12 +267,12 @@ class SMC_HMC():
             def L_logpdf(x, x_cond):
 
                 # Mean of approximately optimal L-kernel
-                mu = (mu_x + cov_x_xnew @ np.linalg.inv(cov_xnew_xnew) @
+                mu = (mu_x + cov_negvnew_xnew @ np.linalg.inv(cov_xnew_xnew) @
                       (x_cond - mu_xnew))
 
                 # Variance of approximately optimal L-kernel
-                cov = (cov_x_x - cov_x_xnew @
-                       np.linalg.inv(cov_xnew_xnew) @ cov_xnew_x)
+                cov = (cov_negvnew_negv - cov_negvnew_xnew @
+                       np.linalg.inv(cov_xnew_xnew) @ cov_xnew_negvnew)
 
                 # Add ridge to avoid singularities
                 cov += np.eye(self.D) * 1e-6
@@ -290,7 +290,7 @@ class SMC_HMC():
 
                 return logpdf
 
-            # Find new weights
+            # Find new weights, Backwards L kerenl parameterised on (-v_new, x_new)
             for i in range(self.N):
                 logw_new[i] = (logw[i] +
                                p_logpdf_x_new[i] -

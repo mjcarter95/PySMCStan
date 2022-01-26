@@ -118,7 +118,7 @@ class HMC_proposal(Q_Base):
         """
         Description
         -----------
-        Draw a sample from the velocity/momentum distribution
+        Draw a number of samples equal to size from the velocity/momentum distribution
         """
         
         return self.v_dist.rvs(size)

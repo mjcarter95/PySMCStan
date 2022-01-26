@@ -99,8 +99,10 @@ class SMC_HMC():
         self.resampling_points = np.array([])
 
         # Sample x and v from prior and find initial evaluations of the
-        # target and the prior. Note that, be default, we keep
-        # the log weights vertically stacked.
+        # target and the prior. The velocity is sampled from a standard
+        # normal distribution and used throughout the HMC proposal.
+        # Note that, by default, we keep the log weights vertically stacked
+         
         x = np.vstack(self.q0.rvs(size=self.N))
         v = np.vstack(self.q.v_rvs(size=self.N))
 

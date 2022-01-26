@@ -116,10 +116,10 @@ class SMC_HMC():
         v = np.vstack(self.q.v_rvs(size=self.N))
 
         p_logpdf_x = np.vstack(self.p.logpdf(x))
-        p_q0_x = np.vstack(self.q.v_logpdf(v))
+        p_q0_v = np.vstack(self.q.v_logpdf(v))
 
         # Find weights of prior samples
-        logw = p_logpdf_x - p_q0_x
+        logw = p_logpdf_x - p_q0_v
 
         # Main sampling loop
         for self.k in range(self.K):

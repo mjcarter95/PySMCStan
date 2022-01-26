@@ -20,6 +20,8 @@ class SMC_HMC():
 
     q0 : initial proposal instance
 
+    v: Velocity distribution, initial distribution sampled from a standard Normal distribution.
+
     K : no. iterations to run
 
     h: Step-size of the Leapfrog method

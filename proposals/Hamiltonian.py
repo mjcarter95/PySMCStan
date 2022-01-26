@@ -9,10 +9,29 @@ class HMC_proposal(Q_Base):
         Description
         -----------
         Fixed step Hamiltonian Monte Carlo proposal distribution.
+        
+        Parameters
+        ----------
+        
 
+        p : target distribution
+
+        h : Step size used by Leapfrog
+
+        D: Dimension of target
+
+        Steps : no. of steps made by Leapfrog
+
+        v_dist: Distribuion of the velocity 
+
+        Cov: Scalar term which increases the variance of the velocity distribution
+
+        grad_x: gradient of the target w.r.t. x
+
+    
     """
 
-    def __init__(self, D, p,h,steps, Cov):
+    def __init__(self, D, p, h, steps, Cov):
         self.D = D
         self.target = p
         self.h=h

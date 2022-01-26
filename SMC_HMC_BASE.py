@@ -244,7 +244,7 @@ class SMC_HMC():
         # Use Gaussian approximation of the optimal L-kernel
         if self.optL == 'gauss':
 
-            # Collect x and x_new together into X
+            # Collect v_new and x_new together into X
             X = np.hstack([-v_new, x_new])
 
             # Directly estimate the mean and covariance matrix of X

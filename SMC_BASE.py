@@ -63,11 +63,6 @@ class SMC():
             from proposals.random_walk import random_walk_proposal
             self.q = random_walk_proposal(self.D)
             self.proposal = 'rw'
-        elif(proposal == 'hmc'):
-            from proposals.Hamiltonian import HMC_proposal
-            self.q = HMC_proposal(self.D, p)
-            self.v_new = np.zeros([self.N, self.D])
-            self.proposal = 'hmc'
 
     def generate_samples(self):
 

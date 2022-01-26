@@ -1,10 +1,7 @@
-from autograd.differential_operators import grad
 import autograd.numpy as np
 import importance_sampling as IS
-from autograd.scipy.stats import multivariate_normal
-from SMC_TEMPLATES import Q_Base
+from proposals.Hamiltonian import HMC_proposal
 from autograd import elementwise_grad as egrad
-import sys
 
 class SMC_HMC():
 
@@ -54,7 +51,7 @@ class SMC_HMC():
     L.J. Devlin and P.L.Green
     """
 
-    def __init__(self, N, D, p, q0, K, h, steps, Cov, proposal, optL, verbose=False):
+    def __init__(self, N, D, p, q0, K, h, steps, Cov, optL, verbose=False):
 
         # Assign variables to self
         self.N = N
@@ -65,18 +62,8 @@ class SMC_HMC():
         self.optL = optL
         self.verbose = verbose
         self.T=h*steps
-
-        if(isinstance(proposal, Q_Base)):
-            self.q = proposal
-            self.proposal='user'
-        elif(proposal == 'rw'):
-            from proposals.random_walk import random_walk_proposal
-            self.q = random_walk_proposal(self.D)
-            self.proposal = 'rw'
-        elif(proposal == 'hmc'):
-            from proposals.Hamiltonian import HMC_proposal
-            self.q = HMC_proposal(self.D, p, h, steps, Cov)
-            self.proposal = 'hmc'
+        self.q = HMC_proposal(self.D, p, h, steps, Cov)
+        
 
     def generate_samples(self):
 
@@ -179,11 +166,11 @@ class SMC_HMC():
                 x, p_logpdf_x, wn = IS.resample(x, p_logpdf_x, wn, self.N)
                 logw = np.log(wn)
         
-            if(self.proposal=='hmc'):
-                for i in range(self.N):
-                    grad_x[i] = egrad(self.p.logpdf)(x[i])
-                    X = np.vstack([x[i], v[i], grad_x[i]])
-                    x_new[i], v_new[i] = self.q.rvs(x_cond=X)
+            # Importance sampling step, calculate gradient to start Leapfrog
+            for i in range(self.N):
+                grad_x[i] = egrad(self.p.logpdf)(x[i])
+                X = np.vstack([x[i], v[i], grad_x[i]])
+                x_new[i], v_new[i] = self.q.rvs(x_cond=X)
 
             # Make sure evaluations of likelihood are vectorised
             p_logpdf_x_new = self.p.logpdf(x_new)

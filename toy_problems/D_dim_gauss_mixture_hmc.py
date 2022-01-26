@@ -81,15 +81,15 @@ k= 3
 Cov = 1
 
 # OptL SMC sampler with Monte-Carlo approximation
-smc_fp = SMC_HMC(N, D, p, q0, K, h, k, Cov, proposal='hmc', optL='forwards-proposal')
+smc_fp = SMC_HMC(N, D, p, q0, K, h, k, Cov, optL='forwards-proposal')
 smc_fp.generate_samples()
 
 # OptL SMC sampler with Gaussian approximation
-smc_gauss = SMC_HMC(N, D, p, q0, K, h, k, Cov, proposal='hmc', optL='gauss')
+smc_gauss = SMC_HMC(N, D, p, q0, K, h, k, Cov, optL='gauss')
 smc_gauss.generate_samples()
 
 # OptL SMC sampler with Monte-Carlo approximation
-smc_mc = SMC_HMC(N, D, p, q0, K, h, k, Cov, proposal='hmc', optL='monte-carlo')
+smc_mc = SMC_HMC(N, D, p, q0, K, h, k, Cov, optL='monte-carlo')
 smc_mc.generate_samples()
 
 # Plots of estimated mean

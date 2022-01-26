@@ -175,8 +175,8 @@ class SMC_HMC():
             # Importance sampling step, calculate gradient to start Leapfrog
             for i in range(self.N):
                 grad_x[i] = egrad(self.p.logpdf)(x[i])
-                X = np.vstack([x[i], v[i], grad_x[i]])
-                x_new[i], v_new[i] = self.q.rvs(x_cond=X)
+                Leapfrog_params = np.vstack([x[i], v[i], grad_x[i]])
+                x_new[i], v_new[i] = self.q.rvs(x_cond=Leapfrog_params)
 
             # Make sure evaluations of likelihood are vectorised
             p_logpdf_x_new = self.p.logpdf(x_new)

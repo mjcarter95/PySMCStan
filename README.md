@@ -17,10 +17,13 @@
 - D_dim_gauss.py uses a random walk proposal, while D_dim_gauss_mixture.py, uses a user-defined proposal.
 - Changed test file to match new SMC class call.
 - Import templates for targets, prior and proposal from SMC_TEMPLATES
+- Fixed issue that was causing biased variance estiamtes when using recycled estimates 
 -```SMC_HMC_BASE`` allows a hmc proposal to be utilised. It requires the step-size and number of steps for the Leapfrog integrator
 - Cov parameter in ```SMC_HMC_BASE`` allows the covariance of the Gaussian which velocity is drawn from to be changed.
 - Included requirements script which makes sure autodiff is available.
 
 ## Requirements
 - To install required packages run ```pip install -r requirements.txt```
+
+
 

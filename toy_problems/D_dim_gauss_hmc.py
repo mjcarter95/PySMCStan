@@ -47,7 +47,8 @@ N = 100
 K = 100
 
 
-# Step-size (h), number of Leapfrog steps (k), and Covariance of velocity distribution (Cov)
+# Step-size (h), number of Leapfrog steps (k), and Covariance of the initial velocity distribution
+#  at the start of a Hamiltonina trajectory (Cov)
 h=0.2
 k= 3
 Cov = 1

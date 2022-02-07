@@ -8,7 +8,7 @@ class SMC_HMC():
     """
     Description
     -----------
-    A base class for an SMC sampler with a Hamiltonian proposal.
+    A base class for an SMC sampler with a fixed length Hamiltonian proposal.
 
     Parameters
     ----------
@@ -22,7 +22,8 @@ class SMC_HMC():
 
     grad_x: Gradient of the target distribution w.r.t. x
 
-    v: Velocity distribution, initial distribution sampled from a standard Normal distribution.
+    v: Velocity distribution. Momentum is usually used in Hamiltonian MCMC, but here we assume (for the time being) that 
+    the mass is the identity matrix, we therefore refer to it as velocity since momentum = mass * velocity
 
     K : no. iterations to run
 
@@ -30,7 +31,7 @@ class SMC_HMC():
 
     steps: Total number of steps before stopping
 
-    Cov: scale of the diagonal matrix to generate samples from the momentum distribution
+    Cov: Scale of the diagonal matrix to generate samples for the initial momentum distribution
 
     q : general proposal distribution instance
 
@@ -100,14 +101,11 @@ class SMC_HMC():
         self.Neff = np.zeros(self.K)
         self.resampling_points = np.array([])
 
-        # Sample x and v from prior and find initial evaluations of the
-        # target and the prior. The velocity is sampled from a standard
-        # normal distribution and used throughout the HMC proposal.
-        # Note that, by default, we keep the log weights vertically stacked
-         
+        # Sample x from the prior and find initial evaluations of the
+        # target and the prior. Note that, by default, we keep the log
+        # weights vertically stacked         
         x = np.vstack(self.q0.rvs(size=self.N))
-        v = np.vstack(self.q.v_rvs(size=self.N))
-
+        
         p_logpdf_x = np.vstack(self.p.logpdf(x))
         p_q0_x = np.vstack(self.q0.logpdf(x))
 
@@ -171,8 +169,19 @@ class SMC_HMC():
                                                    self.k)
                 x, p_logpdf_x, wn = IS.resample(x, p_logpdf_x, wn, self.N)
                 logw = np.log(wn)
+
+
+            #  Sample v from prior to start trajectories. The velocity is sampled
+            #  from a normal distribution with zero mean and covariance of 'covar'.
+            #  We do this here so we have easy access to them for later in weight updates for
+            #  the forwards proposal
+            v = np.vstack(self.q.v_rvs(size=self.N))
         
-            # Importance sampling step, calculate gradient to start Leapfrog
+            # Importance sampling step, calculate gradient to start Leapfrog. Notice:
+            # to pass parameters to the HMC proposal we package the positions, velocity
+            # and intial gradient evaluations together so we follow convnetion with the SMC_templates
+            # which expect a single parameter as input. We also do the initial gradient evaliation
+            # here since we can use them later for the monte-carlo L-kernel approach.
             for i in range(self.N):
                 grad_x[i] = egrad(self.p.logpdf)(x[i])
                 Leapfrog_params = np.vstack([x[i], v[i], grad_x[i]])
@@ -197,7 +206,7 @@ class SMC_HMC():
             x = np.copy(x_new)
             logw = np.copy(logw_new)
             p_logpdf_x = np.copy(p_logpdf_x_new)
-            v = np.vstack(self.q.v_rvs(size=self.N))
+
 
         # Final quantities to be returned
         self.x = x
@@ -212,13 +221,15 @@ class SMC_HMC():
         Used to update the log weights of a new set of samples, using the
             weights of the samples from the previous iteration. This is
             either done using a Gaussian approximation or a Monte-Carlo
-            approximation of the opimal L-kernel.
+            approximation of the opimal L-kernel. For a Hamiltonian proposal,
+            the forwards and backwards kernel are parameterised by the velocity 
+            distributions (see https://arxiv.org/abs/2108.02498).
 
         Parameters
         ----------
         x : samples from the previous iteration
 
-        v : velocity samples from the previous iteration
+        v : velocity samples from the start of the trajectory
 
         x_new : samples from the current iteration
 
@@ -251,8 +262,8 @@ class SMC_HMC():
             mu_X = np.mean(X, axis=0)
             cov_X = np.cov(np.transpose(X))
 
-            # Find mean of the joint distribution (p(x, x_new))
-            mu_x, mu_xnew = mu_X[0:self.D], mu_X[self.D:2 * self.D]
+            # Find mean of the joint distribution (p(v_-new, x_new))
+            mu_negvnew, mu_xnew = mu_X[0:self.D], mu_X[self.D:2 * self.D]
 
             # Find covariance matrix of joint distribution (p(-v_new, x_new))
             (cov_negvnew_negv,
@@ -264,11 +275,11 @@ class SMC_HMC():
                                cov_X[self.D:2 * self.D, self.D:2 * self.D])
 
             # Define new L-kernel
-            def L_logpdf(x, x_cond):
+            def L_logpdf(negvnew, x_new):
 
                 # Mean of approximately optimal L-kernel
-                mu = (mu_x + cov_negvnew_xnew @ np.linalg.inv(cov_xnew_xnew) @
-                      (x_cond - mu_xnew))
+                mu = (mu_negvnew + cov_negvnew_xnew @ np.linalg.inv(cov_xnew_xnew) @
+                      (x_new - mu_xnew))
 
                 # Variance of approximately optimal L-kernel
                 cov = (cov_negvnew_negv - cov_negvnew_xnew @
@@ -286,7 +297,7 @@ class SMC_HMC():
 
                 # Find log pdf
                 logpdf = (-0.5 * log_det_cov -
-                          0.5 * (x - mu).T @ inv_cov @ (x - mu))
+                          0.5 * (negvnew - mu).T @ inv_cov @ (negvnew - mu))
 
                 return logpdf
 
@@ -310,7 +321,9 @@ class SMC_HMC():
                 # Realise Monte-Carlo estimate of denominator
                 for j in range(self.N):
                     
-                    #Calculate approx velocity to move from x^j to x^i
+                    # Calculate approx velocity to move from x^j to x^i
+                    # This comes about by taking a low order truncation of a 
+                    # Taylor expansion of approximating x(t) from x(0) for t>0
                     v_other= (1/self.T)*(x_new[i]-x[j]) - (self.T/2)*grad_x[j]
                     
                     den+=self.q.v_pdf(v_other)

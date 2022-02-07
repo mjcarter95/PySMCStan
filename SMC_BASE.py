@@ -159,24 +159,13 @@ class SMC():
                 x, p_logpdf_x, wn = IS.resample(x, p_logpdf_x, wn, self.N)
                 logw = np.log(wn)
 
-            # This is horrible, need to find a better way
             # Propose new samples
-            if(self.proposal=='hmc'):
-                for i in range(self.N):
-                    x_new[i] = self.q.rvs(x_cond=x[i])
-                    self.v_new[i]=self.q.vf
-                    self.v_ini[i]=self.q.vi
-
-            else:
-                for i in range(self.N):
-                    x_new[i] = self.q.rvs(x_cond=x[i])
+            for i in range(self.N):
+                x_new[i] = self.q.rvs(x_cond=x[i])
 
 
             # Make sure evaluations of likelihood are vectorised
             p_logpdf_x_new = self.p.logpdf(x_new)
-
-            
-            
 
 
             # Update log weights

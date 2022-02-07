@@ -8,12 +8,13 @@ class HMC_proposal(Q_Base):
     """
         Description
         -----------
-        Fixed step Hamiltonian Monte Carlo proposal distribution.
+        Fixed step Hamiltonian Monte Carlo proposal distribution for an SMC-sampler. 
+        Moves samples around the target using the leapfrog integration method over a fixed
+        number of steps and a fixed step-size.
         
         Parameters
         ----------
         
-
         p : target distribution
 
         h : Step size used by Leapfrog
@@ -36,7 +37,11 @@ class HMC_proposal(Q_Base):
         self.target = p
         self.h=h
         self.steps=steps
+        
+        # Set a gradient object which we call each time we require it inside Leapfrog
         self.grad=egrad(self.target.logpdf)
+
+        #Define an initial velcotity disitrbution
         self.v_dist = multivariate_normal(mean=np.zeros(D), cov=Cov*np.eye(D))
 
         
@@ -69,12 +74,14 @@ class HMC_proposal(Q_Base):
         """
         Description
         -----------
-        Returns a new sample state based on a standard normal Gaussian
-        random walk.
+        Returns a new sample state at the end of the integer number of Leapfrog steps.
         """
+
+        #Unpack position, initial velocity, and initial gradient 
         x = x_cond[0,:] 
         v = x_cond[1,:]
         grad_x=x_cond[2, :]
+
 
         x_new, v_new = self.generate_HMC_samples(x, v, grad_x)
         return x_new, v_new
@@ -85,18 +92,16 @@ class HMC_proposal(Q_Base):
         """
         Description
         -----------
-        Handles the fixed step HMC proposal
+        Handles the fixed step HMC proposal by generating a new sample after a number of Leapfrog steps.
         """
 
-        # Main leapfrog loop, fixed to 5 s steps
+        # Main leapfrog loop
         for k in range(0,self.steps):
 
             x, v, grad_x = self.Leapfrog(x, v, grad_x)
         
         return x, v
 
-
-    # Supporting functions - Will Likely move when introducing NUTS
 
     def Leapfrog(self, x, v, grad_x):
         
@@ -112,6 +117,7 @@ class HMC_proposal(Q_Base):
         v = np.add(v, (self.h/2)*grad_x)
         
         return x, v, grad_x
+
 
     def v_rvs(self, size):
 

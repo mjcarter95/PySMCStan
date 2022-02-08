@@ -124,7 +124,7 @@ ax.plot(smc_gauss.Neff / smc_gauss.N, 'k',
         label='Gaussian')
 ax.plot(smc_mc.Neff / smc_mc.N, 'r',
         label='Monte-Carlo')
-ax.plot(smc_fp.Neff / smc_mc.N, 'b',
+ax.plot(smc_fp.Neff / smc_fp.N, 'b',
         label='forwards-proposal')
 ax.set_xlabel('Iteration')
 ax.set_ylabel('$N_{eff} / N$')

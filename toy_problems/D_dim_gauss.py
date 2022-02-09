@@ -5,7 +5,6 @@ sys.path.append('..')  # noqa
 from scipy.stats import multivariate_normal as Normal_PDF
 from SMC_BASE import SMC
 from SMC_TEMPLATES import Target_Base, Q0_Base
-import time
 
 
 """
@@ -50,15 +49,11 @@ K = 100
 
 # OptL SMC sampler with Gaussian approximation
 smc_gauss = SMC(N, D, p, q0, K, proposal='rw', optL='gauss')
-start = time.time()
 smc_gauss.generate_samples()
-print(time.time()-start)
 
 # OptL SMC sampler with Monte-Carlo approximation
 smc_mc = SMC(N, D, p, q0, K, proposal='rw', optL='monte-carlo')
-start = time.time()
 smc_mc.generate_samples()
-print(time.time()-start)
 
 # Plots of estimated mean
 fig, ax = plt.subplots(ncols=2)

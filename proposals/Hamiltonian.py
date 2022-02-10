@@ -29,6 +29,10 @@ class HMC_proposal(Q_Base):
 
         grad_x: gradient of the target w.r.t. x
 
+        Author
+        ------
+        L.J. Devlin
+
     
     """
 
@@ -41,7 +45,7 @@ class HMC_proposal(Q_Base):
         # Set a gradient object which we call each time we require it inside Leapfrog
         self.grad=egrad(self.target.logpdf)
 
-        #Define an initial velcotity disitrbution
+        # Define an initial velocity disitrbution
         self.v_dist = multivariate_normal(mean=np.zeros(D), cov=Cov*np.eye(D))
 
         
@@ -77,11 +81,10 @@ class HMC_proposal(Q_Base):
         Returns a new sample state at the end of the integer number of Leapfrog steps.
         """
 
-        #Unpack position, initial velocity, and initial gradient 
+        # Unpack position, initial velocity, and initial gradient 
         x = x_cond[0,:] 
         v = x_cond[1,:]
         grad_x=x_cond[2, :]
-
 
         x_new, v_new = self.generate_HMC_samples(x, v, grad_x)
         return x_new, v_new
@@ -97,7 +100,6 @@ class HMC_proposal(Q_Base):
 
         # Main leapfrog loop
         for k in range(0,self.steps):
-
             x, v, grad_x = self.Leapfrog(x, v, grad_x)
         
         return x, v

@@ -20,11 +20,6 @@ class SMC_HMC():
 
     q0 : initial proposal instance
 
-    grad_x: Gradient of the target distribution w.r.t. x
-
-    v: Velocity distribution. Momentum is usually used in Hamiltonian MCMC, but here we assume (for the time being) that 
-    the mass is the identity matrix, we therefore refer to it as velocity since momentum = mass * velocity
-
     K : no. iterations to run
 
     h: Step-size of the Leapfrog method
@@ -74,7 +69,8 @@ class SMC_HMC():
 
         """
 
-        # Initialise arrays
+        
+        # Initialise arrays to store new position, velocity and the gradient at the initial position 
         x_new = np.zeros([self.N, self.D])
         v_new = np.zeros([self.N, self.D])
         grad_x = np.zeros([self.N, self.D]) 
@@ -102,10 +98,10 @@ class SMC_HMC():
         x = np.vstack(self.q0.rvs(size=self.N))
         
         p_logpdf_x = np.vstack(self.p.logpdf(x))
-        p_q0_x = np.vstack(self.q0.logpdf(x))
+        p_log_q0_x = np.vstack(self.q0.logpdf(x))
 
         # Find weights of prior samples
-        logw = p_logpdf_x - p_q0_x
+        logw = p_logpdf_x - p_log_q0_x
 
         # Main sampling loop
         for self.k in range(self.K):
@@ -303,7 +299,7 @@ class SMC_HMC():
                                p_logpdf_x_new[i] -
                                p_logpdf_x[i] +
                                 L_logpdf(-v_new[i], x_new[i]) -
-                               self.q.v_logpdf(v[i]))
+                               self.q.logpdf(v[i]))
 
         # Use Monte-Carlo approximation of the optimal L-kernel
         if self.optL == 'monte-carlo':
@@ -322,7 +318,7 @@ class SMC_HMC():
                     # Taylor expansion of approximating x(t) from x(0) for t>0
                     v_other= (1/self.T)*(x_new[i]-x[j]) - (self.T/2)*grad_x[j]
                     
-                    den+=self.q.v_pdf(v_other)
+                    den+=self.q.pdf(v_other)
                                 
                 den /= self.N
 
@@ -337,7 +333,7 @@ class SMC_HMC():
                 logw_new[i] = (logw[i] +
                                p_logpdf_x_new[i] -
                                p_logpdf_x[i] +
-                               self.q.v_logpdf(-v_new[i]) - 
-                               self.q.v_logpdf(v[i]))
+                               self.q.logpdf(-v_new[i]) - 
+                               self.q.logpdf(v[i]))
                         
         return logw_new

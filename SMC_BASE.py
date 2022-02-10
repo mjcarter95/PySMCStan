@@ -99,10 +99,10 @@ class SMC():
         # the log weights vertically stacked.
         x = np.vstack(self.q0.rvs(size=self.N))
         p_logpdf_x = np.vstack(self.p.logpdf(x))
-        p_q0_x = np.vstack(self.q0.logpdf(x))
+        p_log_q0_x = np.vstack(self.q0.logpdf(x))
 
         # Find log-weights of prior samples
-        logw = p_logpdf_x - p_q0_x
+        logw = p_logpdf_x - p_log_q0_x
 
         # Main sampling loop
         for self.k in range(self.K):

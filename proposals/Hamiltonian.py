@@ -10,25 +10,23 @@ class HMC_proposal(Q_Base):
         -----------
         Fixed step Hamiltonian Monte Carlo proposal distribution for an SMC-sampler. 
         Moves samples around the target using the leapfrog integration method over a fixed
-        number of steps and a fixed step-size.
+        number of steps and a fixed step-size. In HMC omentum is usually used in Hamiltonian
+        MCMC, but here we assume (for the time being) that the mass is the identity matrix,
+        we therefore refer to it as velocity since momentum = mass * velocity
+     
         
         Parameters
         ----------
+        D: Dimension of target
         
         p : target distribution
 
         h : Step size used by Leapfrog
 
-        D: Dimension of target
-
         Steps : no. of steps made by Leapfrog
 
-        v_dist: Distribuion of the velocity 
-
         Cov: Scalar term which increases the variance of the velocity distribution
-
-        grad_x: gradient of the target w.r.t. x
-
+          
         Author
         ------
         L.J. Devlin
@@ -49,30 +47,23 @@ class HMC_proposal(Q_Base):
         self.v_dist = multivariate_normal(mean=np.zeros(D), cov=Cov*np.eye(D))
 
         
-    def pdf(self, x, x_cond):
+    def pdf(self, v, v_cond = None):
         """
         Description
         -----------
-        Returns pdf from a normal distribution (with unit variance and
-        mean x_cond) for parameter x.
+        Calculate pdf of velocity distribution
         """
 
-        dx = np.vstack(x - x_cond)
-        p = (2*np.pi)**(-self.D/2) * np.exp(-0.5 * dx.T @ dx)
+        return self.v_dist.pdf(v)
 
-        return p[0]
-
-    def logpdf(self, x, x_cond):
+    def logpdf(self, v, v_cond = None):
         """
         Description
         -----------
-        Returns logpdf from a normal distribution (with unit variance and
-        mean x_cond) for parameter x.
+        Calculate logpdf of velocity distribution
         """
 
-        dx = np.vstack(x - x_cond)
-        logp = -self.D/2 * np.log(2*np.pi) - 0.5 * dx.T @ dx
-        return logp
+        return self.v_dist.logpdf(v)
 
     def rvs(self, x_cond):
         """
@@ -130,23 +121,3 @@ class HMC_proposal(Q_Base):
         """
         
         return self.v_dist.rvs(size)
-
-    def v_pdf(self, x):
-        
-        """
-        Description
-        -----------
-        Calculate pdf of velocity/momentum distribution
-        """
-         
-        return self.v_dist.pdf(x)
-
-    def v_logpdf(self, x):
-        
-        """
-        Description
-        -----------
-        Calculate logpdf of velocity/momentum distribution
-        """
-
-        return self.v_dist.logpdf(x)

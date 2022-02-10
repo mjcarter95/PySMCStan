@@ -33,17 +33,12 @@ class SMC_HMC():
 
     Cov: Scale of the diagonal matrix to generate samples for the initial momentum distribution
 
-    q : general proposal distribution instance
-
     optL : approximation method for the optimal L-kernel. Can be either
         'gauss' or 'monte-carlo' (representing a Gaussian approximation
         or a Monte-Carlo approximation respectively).
 
     Methods
     -------
-
-    estimate : realise importance sampling estimates of mean and
-        covariance matrix of the target.
 
     generate_samples : runs the SMC sampler to generate weighted
         samples from the target.
@@ -66,7 +61,7 @@ class SMC_HMC():
         self.K = K
         self.optL = optL
         self.verbose = verbose
-        self.T=h*steps
+        self.T=h*steps  # 'Time' that leapfrog will simulate over
         self.q = HMC_proposal(self.D, p, h, steps, Cov)
         
 
@@ -125,6 +120,7 @@ class SMC_HMC():
 
             # --------------------------------------------------------------- #
             # EES recycling scheme #
+            #region
 
             # Find the new values of l (equation (18) in
             # https://arxiv.org/pdf/2004.12838.pdf)
@@ -156,7 +152,7 @@ class SMC_HMC():
                 self.var_estimate_EES[self.k] += (c[k_dash] *
                                                   (self.var_estimate[k_dash] + 
                                                    correction))
-
+            #endregion
             # --------------------------------------------------------------- #
 
             # Record effective sample size at kth iteration
@@ -208,7 +204,7 @@ class SMC_HMC():
             p_logpdf_x = np.copy(p_logpdf_x_new)
 
 
-        # Final quantities to be returned
+        # Final quantities to be assigned to self
         self.x = x
         self.logw = logw
 

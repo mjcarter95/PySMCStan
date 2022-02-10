@@ -31,9 +31,6 @@ class SMC():
     Methods
     -------
 
-    estimate : realise importance sampling estimates of mean and
-        covariance matrix of the target.
-
     generate_samples : runs the SMC sampler to generate weighted
         samples from the target.
 
@@ -42,7 +39,7 @@ class SMC():
 
     Author
     ------
-    P.L.Green
+    P.L.Green and L.J. Devlin
     """
 
     def __init__(self, N, D, p, q0, K, proposal, optL, verbose=False):
@@ -56,6 +53,8 @@ class SMC():
         self.optL = optL
         self.verbose = verbose
 
+        # Can either have a user-defined proposal or random walk
+        # proposal in this implementation
         if(isinstance(proposal, Q_Base)):
             self.q = proposal
             self.proposal='user'
@@ -73,11 +72,14 @@ class SMC():
 
         """
 
-        # Initialise arrays
+        # Initialise arrays for storing samples (x_new) and for
+        # the recycling coefficients (lr)
         x_new = np.zeros([self.N, self.D])
         lr = np.array([])
 
-        # Initilise estimates of target mean and covariance matrix
+        # Initilise estimates of target mean and covariance matrix,
+        # where 'EES' represents the overall estimate (i.e. after
+        # recyling)
         self.mean_estimate = np.zeros([self.K, self.D])
         self.mean_estimate_EES = np.zeros([self.K, self.D])
         if self.D == 1:
@@ -99,7 +101,7 @@ class SMC():
         p_logpdf_x = np.vstack(self.p.logpdf(x))
         p_q0_x = np.vstack(self.q0.logpdf(x))
 
-        # Find weights of prior samples
+        # Find log-weights of prior samples
         logw = p_logpdf_x - p_q0_x
 
         # Main sampling loop
@@ -115,8 +117,9 @@ class SMC():
 
             # --------------------------------------------------------------- #
             # EES recycling scheme #
+            #region
 
-            # Find the new values of l (equation (18) in
+            # Find the new values of lr (equation (18) in
             # https://arxiv.org/pdf/2004.12838.pdf)
             lr = np.append(lr, np.sum(wn)**2 / np.sum(wn**2))
 
@@ -146,6 +149,7 @@ class SMC():
                 self.var_estimate_EES[self.k] += (c[k_dash] *
                                                   (self.var_estimate[k_dash] + 
                                                    correction))
+            #endregion
             # --------------------------------------------------------------- #
 
             # Record effective sample size at kth iteration
@@ -163,10 +167,8 @@ class SMC():
             for i in range(self.N):
                 x_new[i] = self.q.rvs(x_cond=x[i])
 
-
             # Make sure evaluations of likelihood are vectorised
             p_logpdf_x_new = self.p.logpdf(x_new)
-
 
             # Update log weights
             logw_new = self.update_weights(x, x_new, logw, p_logpdf_x,
@@ -185,7 +187,7 @@ class SMC():
             logw = np.copy(logw_new)
             p_logpdf_x = np.copy(p_logpdf_x_new)
 
-        # Final quantities to be returned
+        # Final quantities to be assigned to self
         self.x = x
         self.logw = logw
 
@@ -220,7 +222,9 @@ class SMC():
         # Initialise
         logw_new = np.vstack(np.zeros(self.N))
 
-        # Use Gaussian approximation of the optimal L-kernel
+        # Use Gaussian approximation of the optimal L-kernel 
+        # (see Section 4.1 of https://www.sciencedirect.com/science/article/pii/S0888327021004222
+        #  or Section 4.1 of https://arxiv.org/pdf/2004.12838.pdf)
         if self.optL == 'gauss':
 
             # Collect x and x_new together into X
@@ -278,6 +282,8 @@ class SMC():
                                self.q.logpdf(x_new[i], x[i]))
 
         # Use Monte-Carlo approximation of the optimal L-kernel
+        # (not published at the moment but see 
+        # https://www.overleaf.com/project/6130ff176124735112a885b3)
         if self.optL == 'monte-carlo':
             for i in range(self.N):
 

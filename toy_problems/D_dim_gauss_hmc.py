@@ -53,7 +53,7 @@ h=0.2
 k= 3
 Cov = 1
 
-# OptL SMC sampler with Monte-Carlo approximation
+# OptL SMC sampler with an L-kernel equal to the forwards-proposal
 smc_fp = SMC_HMC(N, D, p, q0, K, h, k, Cov, optL='forwards-proposal')
 smc_fp.generate_samples()
 

@@ -1,14 +1,14 @@
 import autograd.numpy as np
 import importance_sampling as IS
-from SMC_TEMPLATES import Q_Base
+from proposals.Hamiltonian import HMC_proposal
+from autograd import elementwise_grad as egrad
 
-
-class SMC():
+class SMC_HMC():
 
     """
     Description
     -----------
-    A base class for an SMC sampler.
+    A base class for an SMC sampler with a fixed length Hamiltonian proposal.
 
     Parameters
     ----------
@@ -22,7 +22,11 @@ class SMC():
 
     K : no. iterations to run
 
-    q : general proposal distribution instance
+    h: Step-size of the Leapfrog method
+
+    steps: Total number of steps before stopping
+
+    Cov: Scale of the diagonal matrix to generate samples for the initial momentum distribution
 
     optL : approximation method for the optimal L-kernel. Can be either
         'gauss' or 'monte-carlo' (representing a Gaussian approximation
@@ -39,10 +43,10 @@ class SMC():
 
     Author
     ------
-    P.L.Green and L.J. Devlin
+    L.J. Devlin and P.L.Green
     """
 
-    def __init__(self, N, D, p, q0, K, proposal, optL, verbose=False):
+    def __init__(self, N, D, p, q0, K, h, steps, Cov, optL, verbose=False):
 
         # Assign variables to self
         self.N = N
@@ -52,16 +56,9 @@ class SMC():
         self.K = K
         self.optL = optL
         self.verbose = verbose
-
-        # Can either have a user-defined proposal or random walk
-        # proposal in this implementation
-        if(isinstance(proposal, Q_Base)):
-            self.q = proposal
-            self.proposal='user'
-        elif(proposal == 'rw'):
-            from proposals.random_walk import random_walk_proposal
-            self.q = random_walk_proposal(self.D)
-            self.proposal = 'rw'
+        self.T=h*steps  # 'Time' that leapfrog will simulate over
+        self.q = HMC_proposal(self.D, p, h, steps, Cov)
+        
 
     def generate_samples(self):
 
@@ -72,14 +69,15 @@ class SMC():
 
         """
 
-        # Initialise arrays for storing samples (x_new) and for
-        # the recycling coefficients (lr)
+        
+        # Initialise arrays to store new position, velocity and the gradient at the initial position 
         x_new = np.zeros([self.N, self.D])
+        v_new = np.zeros([self.N, self.D])
+        grad_x = np.zeros([self.N, self.D]) 
+
         lr = np.array([])
 
-        # Initilise estimates of target mean and covariance matrix,
-        # where 'EES' represents the overall estimate (i.e. after
-        # recyling)
+        # Initilise estimates of target mean and covariance matrix
         self.mean_estimate = np.zeros([self.K, self.D])
         self.mean_estimate_EES = np.zeros([self.K, self.D])
         if self.D == 1:
@@ -94,14 +92,15 @@ class SMC():
         self.Neff = np.zeros(self.K)
         self.resampling_points = np.array([])
 
-        # Sample from prior and find initial evaluations of the
-        # target and the prior. Note that, be default, we keep
-        # the log weights vertically stacked.
+        # Sample x from the prior and find initial evaluations of the
+        # target and the prior. Note that, by default, we keep the log
+        # weights vertically stacked         
         x = np.vstack(self.q0.rvs(size=self.N))
+        
         p_logpdf_x = np.vstack(self.p.logpdf(x))
         p_log_q0_x = np.vstack(self.q0.logpdf(x))
 
-        # Find log-weights of prior samples
+        # Find weights of prior samples
         logw = p_logpdf_x - p_log_q0_x
 
         # Main sampling loop
@@ -119,7 +118,7 @@ class SMC():
             # EES recycling scheme #
             #region
 
-            # Find the new values of lr (equation (18) in
+            # Find the new values of l (equation (18) in
             # https://arxiv.org/pdf/2004.12838.pdf)
             lr = np.append(lr, np.sum(wn)**2 / np.sum(wn**2))
 
@@ -163,16 +162,29 @@ class SMC():
                 x, p_logpdf_x, wn = IS.resample(x, p_logpdf_x, wn, self.N)
                 logw = np.log(wn)
 
-            # Propose new samples
+
+            #  Sample v from prior to start trajectories. The velocity is sampled
+            #  from a normal distribution with zero mean and covariance of 'covar'.
+            #  We do this here so we have easy access to them for later in weight updates for
+            #  the forwards proposal
+            v = np.vstack(self.q.v_rvs(size=self.N))
+        
+            # Importance sampling step, calculate gradient to start Leapfrog. Notice:
+            # to pass parameters to the HMC proposal we package the positions, velocity
+            # and intial gradient evaluations together so we follow convnetion with the SMC_templates
+            # which expect a single parameter as input. We also do the initial gradient evaliation
+            # here since we can use them later for the monte-carlo L-kernel approach.
             for i in range(self.N):
-                x_new[i] = self.q.rvs(x_cond=x[i])
+                grad_x[i] = egrad(self.p.logpdf)(x[i])
+                Leapfrog_params = np.vstack([x[i], v[i], grad_x[i]])
+                x_new[i], v_new[i] = self.q.rvs(x_cond=Leapfrog_params)
 
             # Make sure evaluations of likelihood are vectorised
             p_logpdf_x_new = self.p.logpdf(x_new)
 
             # Update log weights
             logw_new = self.update_weights(x, x_new, logw, p_logpdf_x,
-                                           p_logpdf_x_new)
+                                           p_logpdf_x_new, v, v_new, grad_x)
 
             # Make sure that, if p.logpdf(x_new) is -inf, then logw_new
             # will also be -inf. Otherwise it is returned as NaN.
@@ -187,25 +199,35 @@ class SMC():
             logw = np.copy(logw_new)
             p_logpdf_x = np.copy(p_logpdf_x_new)
 
+
         # Final quantities to be assigned to self
         self.x = x
         self.logw = logw
 
+
     def update_weights(self, x, x_new, logw, p_logpdf_x,
-                       p_logpdf_x_new):
+                       p_logpdf_x_new, v, v_new, grad_x):
         """
         Description
         -----------
         Used to update the log weights of a new set of samples, using the
             weights of the samples from the previous iteration. This is
             either done using a Gaussian approximation or a Monte-Carlo
-            approximation of the opimal L-kernel.
+            approximation of the opimal L-kernel. For a Hamiltonian proposal,
+            the forwards and backwards kernel are parameterised by the velocity 
+            distributions (see https://arxiv.org/abs/2108.02498).
 
         Parameters
         ----------
         x : samples from the previous iteration
 
+        v : velocity samples from the start of the trajectory
+
         x_new : samples from the current iteration
+
+        v_new : velocity samples from the current iteration
+
+        grad_x : gradient value at x
 
         logw : low importance weights associated with x
 
@@ -222,40 +244,38 @@ class SMC():
         # Initialise
         logw_new = np.vstack(np.zeros(self.N))
 
-        # Use Gaussian approximation of the optimal L-kernel 
-        # (see Section 4.1 of https://www.sciencedirect.com/science/article/pii/S0888327021004222
-        #  or Section 4.1 of https://arxiv.org/pdf/2004.12838.pdf)
+        # Use Gaussian approximation of the optimal L-kernel
         if self.optL == 'gauss':
 
-            # Collect x and x_new together into X
-            X = np.hstack([x, x_new])
+            # Collect v_new and x_new together into X
+            X = np.hstack([-v_new, x_new])
 
             # Directly estimate the mean and covariance matrix of X
             mu_X = np.mean(X, axis=0)
             cov_X = np.cov(np.transpose(X))
 
-            # Find mean of the joint distribution (p(x, x_new))
-            mu_x, mu_xnew = mu_X[0:self.D], mu_X[self.D:2 * self.D]
+            # Find mean of the joint distribution (p(v_-new, x_new))
+            mu_negvnew, mu_xnew = mu_X[0:self.D], mu_X[self.D:2 * self.D]
 
-            # Find covariance matrix of joint distribution (p(x, x_new))
-            (cov_x_x,
-             cov_x_xnew,
-             cov_xnew_x,
+            # Find covariance matrix of joint distribution (p(-v_new, x_new))
+            (cov_negvnew_negv,
+             cov_negvnew_xnew,
+             cov_xnew_negvnew,
              cov_xnew_xnew) = (cov_X[0:self.D, 0:self.D],
                                cov_X[0:self.D, self.D:2 * self.D],
                                cov_X[self.D:2 * self.D, 0:self.D],
                                cov_X[self.D:2 * self.D, self.D:2 * self.D])
 
             # Define new L-kernel
-            def L_logpdf(x, x_cond):
+            def L_logpdf(negvnew, x_new):
 
                 # Mean of approximately optimal L-kernel
-                mu = (mu_x + cov_x_xnew @ np.linalg.inv(cov_xnew_xnew) @
-                      (x_cond - mu_xnew))
+                mu = (mu_negvnew + cov_negvnew_xnew @ np.linalg.inv(cov_xnew_xnew) @
+                      (x_new - mu_xnew))
 
                 # Variance of approximately optimal L-kernel
-                cov = (cov_x_x - cov_x_xnew @
-                       np.linalg.inv(cov_xnew_xnew) @ cov_xnew_x)
+                cov = (cov_negvnew_negv - cov_negvnew_xnew @
+                       np.linalg.inv(cov_xnew_xnew) @ cov_xnew_negvnew)
 
                 # Add ridge to avoid singularities
                 cov += np.eye(self.D) * 1e-6
@@ -269,34 +289,51 @@ class SMC():
 
                 # Find log pdf
                 logpdf = (-0.5 * log_det_cov -
-                          0.5 * (x - mu).T @ inv_cov @ (x - mu))
+                          0.5 * (negvnew - mu).T @ inv_cov @ (negvnew - mu))
 
                 return logpdf
 
-            # Find new weights
+            # Find new weights, Backwards L kerenl parameterised on (-v_new, x_new)
             for i in range(self.N):
                 logw_new[i] = (logw[i] +
                                p_logpdf_x_new[i] -
                                p_logpdf_x[i] +
-                               L_logpdf(x[i], x_new[i]) -
-                               self.q.logpdf(x_new[i], x[i]))
+                                L_logpdf(-v_new[i], x_new[i]) -
+                               self.q.logpdf(v[i]))
 
         # Use Monte-Carlo approximation of the optimal L-kernel
-        # (not published at the moment but see 
-        # https://www.overleaf.com/project/6130ff176124735112a885b3)
         if self.optL == 'monte-carlo':
+
             for i in range(self.N):
 
                 # Initialise what will be the denominator of our
                 # weight-update equation
                 den = np.zeros(1)
-
+                
                 # Realise Monte-Carlo estimate of denominator
                 for j in range(self.N):
-                    den += self.q.pdf(x_new[i], x[j])
+                    
+                    # Calculate approx velocity to move from x^j to x^i
+                    # This comes about by taking a low order truncation of a 
+                    # Taylor expansion of approximating x(t) from x(0) for t>0
+                    v_other= (1/self.T)*(x_new[i]-x[j]) - (self.T/2)*grad_x[j]
+                    
+                    den+=self.q.pdf(v_other)
+                                
                 den /= self.N
 
                 # Calculate new log-weight
                 logw_new[i] = p_logpdf_x_new[i] - np.log(den)
 
+
+        # Use the forwards proposal as the L-kernel
+        if self.optL == 'forwards-proposal':
+            # Find new weights
+            for i in range(self.N):
+                logw_new[i] = (logw[i] +
+                               p_logpdf_x_new[i] -
+                               p_logpdf_x[i] +
+                               self.q.logpdf(-v_new[i]) - 
+                               self.q.logpdf(v[i]))
+                        
         return logw_new

@@ -22,7 +22,7 @@
 - Cov parameter in ```SMC_HMC_BASE`` allows the covariance of the Gaussian which velocity is drawn from to be changed.
 - Included requirements script which makes sure autodiff is available.
 
-## Version 4 (in development)
+## Version 4
 - Introduced separate file of recycling schemes
 
 ## Requirements

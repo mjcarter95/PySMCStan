@@ -54,15 +54,18 @@ k= 3
 Cov = 1
 
 # OptL SMC sampler with an L-kernel equal to the forwards-proposal
-smc_fp = SMC_HMC(N, D, p, q0, K, h, k, Cov, optL='forwards-proposal')
+smc_fp = SMC_HMC(N, D, p, q0, K, h, k, Cov, optL='forwards-proposal',
+                 rc_scheme='ESS_Recycling')
 smc_fp.generate_samples()
 
 # OptL SMC sampler with Gaussian approximation
-smc_gauss = SMC_HMC(N, D, p, q0, K, h, k, Cov, optL='gauss')
+smc_gauss = SMC_HMC(N, D, p, q0, K, h, k, Cov, optL='gauss',
+                    rc_scheme='ESS_Recycling')
 smc_gauss.generate_samples()
 
 # OptL SMC sampler with Monte-Carlo approximation
-smc_mc = SMC_HMC(N, D, p, q0, K, h, k, Cov, optL='monte-carlo')
+smc_mc = SMC_HMC(N, D, p, q0, K, h, k, Cov, optL='monte-carlo',
+                 rc_scheme='ESS_Recycling')
 smc_mc.generate_samples()
 
 # Plots of estimated mean
@@ -70,13 +73,13 @@ fig, ax = plt.subplots(ncols=3)
 for i in range(3):
     for d in range(D):
         if i == 0:
-            ax[i].plot(smc_gauss.mean_estimate_EES[:, d], 'k',
+            ax[i].plot(smc_gauss.mean_estimate_rc[:, d], 'k',
                        alpha=0.5)
         if i == 1:
-            ax[i].plot(smc_mc.mean_estimate_EES[:, d], 'r',
+            ax[i].plot(smc_mc.mean_estimate_rc[:, d], 'r',
                        alpha=0.5)
         if i == 2:
-            ax[i].plot(smc_fp.mean_estimate_EES[:, d], 'b',
+            ax[i].plot(smc_fp.mean_estimate_rc[:, d], 'b',
                        alpha=0.5)
     ax[i].plot(np.repeat(2, K), 'lime', linewidth=3.0,
                linestyle='--')
@@ -97,13 +100,13 @@ fig, ax = plt.subplots(ncols=3)
 for i in range(3):
     for d in range(D):
         if i == 0:
-            ax[i].plot(smc_gauss.var_estimate_EES[:, d, d], 'k',
+            ax[i].plot(smc_gauss.var_estimate_rc[:, d, d], 'k',
                        alpha=0.5)
         if i == 1:
-            ax[i].plot(smc_mc.var_estimate_EES[:, d, d], 'r',
+            ax[i].plot(smc_mc.var_estimate_rc[:, d, d], 'r',
                        alpha=0.5)
         if i == 2:
-            ax[i].plot(smc_fp.var_estimate_EES[:, d, d], 'b',
+            ax[i].plot(smc_fp.var_estimate_rc[:, d, d], 'b',
                        alpha=0.5)
     ax[i].plot(np.repeat(1, K), 'lime', linewidth=3.0,
                linestyle='--')

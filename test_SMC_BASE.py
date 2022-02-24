@@ -68,17 +68,21 @@ def test_gauss_optL():
     """
 
     # SMC sampler
-    smc = SMC(N, 2, p, q0, K, proposal=q, optL='gauss')
+    smc = SMC(N, 2, p, q0, K, proposal=q, optL='gauss', rc_scheme='ESS_Recycling')
     smc.generate_samples()
 
     # Check estimates
-    assert np.allclose(smc.mean_estimate_EES[-1], p.mean, atol=0.1)
-    assert np.allclose(smc.var_estimate_EES[-1][0][0], p.cov[0][0],
+    assert np.allclose(smc.mean_estimate_rc[-1], p.mean, atol=0.1)
+    assert np.allclose(smc.var_estimate_rc[-1][0][0], p.cov[0][0],
                        atol=0.2)
     assert np.allclose(smc.var_estimate[-1][1][1], p.cov[1][1],
                        atol=0.2)
     assert np.allclose(smc.var_estimate[-1][0][1], p.cov[0][1],
                        atol=0.2)
+
+    # Check that the sampler will run without a recycling scheme
+    smc = SMC(N, 2, p, q0, K, proposal=q, optL='gauss')
+    smc.generate_samples()
 
 
 def test_monte_carlo_optL():
@@ -88,12 +92,12 @@ def test_monte_carlo_optL():
     """
 
     # SMC sampler
-    smc = SMC(N, 2, p, q0, K, proposal=q, optL='monte-carlo')
+    smc = SMC(N, 2, p, q0, K, proposal=q, optL='monte-carlo', rc_scheme='ESS_Recycling')
     smc.generate_samples()
 
     # Check estimates
-    assert np.allclose(smc.mean_estimate_EES[-1], p.mean, atol=0.1)
-    assert np.allclose(smc.var_estimate_EES[-1][0][0], p.cov[0][0],
+    assert np.allclose(smc.mean_estimate_rc[-1], p.mean, atol=0.1)
+    assert np.allclose(smc.var_estimate_rc[-1][0][0], p.cov[0][0],
                        atol=0.2)
     assert np.allclose(smc.var_estimate[-1][1][1], p.cov[1][1],
                        atol=0.2)

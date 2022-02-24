@@ -22,6 +22,9 @@
 - Cov parameter in ```SMC_HMC_BASE`` allows the covariance of the Gaussian which velocity is drawn from to be changed.
 - Included requirements script which makes sure autodiff is available.
 
+## Version 4 (in development)
+- Introduced separate file of recycling schemes
+
 ## Requirements
 - To install required packages run ```pip install -r requirements.txt```
 

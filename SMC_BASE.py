@@ -1,6 +1,7 @@
 import autograd.numpy as np
 import importance_sampling as IS
 from SMC_TEMPLATES import Q_Base
+from RECYCLING import ESS_Recycling
 
 
 class SMC():
@@ -8,7 +9,12 @@ class SMC():
     """
     Description
     -----------
-    A base class for an SMC sampler.
+    A base class for an SMC sampler. Estimates of the mean and variance
+    / covariance matrix associated with a specific iteration are reported
+    in mean_estimate and var_estimate respectively. Recycled estimates of
+    the mean and variance / covariance matrix are reported in 
+    mean_estimate_rc and var_estimate_rc respectively (when recycling is
+    active). 
 
     Parameters
     ----------
@@ -28,6 +34,12 @@ class SMC():
         'gauss' or 'monte-carlo' (representing a Gaussian approximation
         or a Monte-Carlo approximation respectively).
 
+    rc_scheme : option to have various recycling schemes (or none) Can 
+        currently be 'ESS_Recycling' (which aims to maximise the effective
+        sample size) or 'None' (which is currently the default). 
+
+    verbose : option to print various things while the sampler is running
+
     Methods
     -------
 
@@ -42,7 +54,8 @@ class SMC():
     P.L.Green and L.J. Devlin
     """
 
-    def __init__(self, N, D, p, q0, K, proposal, optL, verbose=False):
+    def __init__(self, N, D, p, q0, K, proposal, optL, 
+                 rc_scheme=None, verbose=False):
 
         # Assign variables to self
         self.N = N
@@ -63,6 +76,13 @@ class SMC():
             self.q = random_walk_proposal(self.D)
             self.proposal = 'rw'
 
+        # Initialise recycling scheme. For now we just have one,
+        # but we might add some more later!
+        if rc_scheme == 'ESS_Recycling':
+            self.rc = ESS_Recycling(self.D)
+        elif rc_scheme == None:
+            self.rc = None
+
     def generate_samples(self):
 
         """
@@ -72,22 +92,22 @@ class SMC():
 
         """
 
-        # Initialise arrays for storing samples (x_new) and for
-        # the recycling coefficients (lr)
+        # Initialise arrays for storing samples (x_new)
         x_new = np.zeros([self.N, self.D])
-        lr = np.array([])
 
         # Initilise estimates of target mean and covariance matrix,
-        # where 'EES' represents the overall estimate (i.e. after
-        # recyling)
+        # where 'rc' represents the overall estimate (i.e. after
+        # recyling). 
         self.mean_estimate = np.zeros([self.K, self.D])
-        self.mean_estimate_EES = np.zeros([self.K, self.D])
+        self.mean_estimate_rc = np.zeros([self.K, self.D])
         if self.D == 1:
             self.var_estimate = np.zeros([self.K, self.D])
-            self.var_estimate_EES = np.zeros([self.K, self.D])
+            if self.rc:
+                self.var_estimate_rc = np.zeros([self.K, self.D])
         else:
             self.var_estimate = np.zeros([self.K, self.D, self.D])
-            self.var_estimate_EES = np.zeros([self.K, self.D, self.D])
+            if self.rc:
+                self.var_estimate_rc = np.zeros([self.K, self.D, self.D])
 
         # Used to record the effective sample size and the points
         # where resampling occurred.
@@ -115,42 +135,12 @@ class SMC():
             (self.mean_estimate[self.k],
              self.var_estimate[self.k]) = IS.estimate(x, wn, self.D, self.N)
 
-            # --------------------------------------------------------------- #
-            # EES recycling scheme #
-            #region
-
-            # Find the new values of lr (equation (18) in
-            # https://arxiv.org/pdf/2004.12838.pdf)
-            lr = np.append(lr, np.sum(wn)**2 / np.sum(wn**2))
-
-            # Initialise c array (also defined by equation (18) in
-            # https://arxiv.org/pdf/2004.12838.pdf)
-            c = np.array([])
-
-            # Loop to recalculate the optimal c values
-            for k_dash in range(self.k + 1):
-                c = np.append(c, lr[k_dash] / np.sum(lr))
-
-            # Loop to recalculate estimates of the mean
-            for k_dash in range(self.k + 1):
-                self.mean_estimate_EES[self.k] += (c[k_dash] *
-                                                   self.mean_estimate[k_dash])
-
-            # Loop to recalculate estimates of the variance / cov. matrix
-            for k_dash in range(self.k + 1):
-
-                # Define a 'correction' term, to account for the bias that
-                # arises in the variance estimate as a result of using the
-                # estimated mean
-                correction = (self.mean_estimate_EES[self.k] -
-                              self.mean_estimate[k_dash])**2
-
-                # Variance estimate, including correction term
-                self.var_estimate_EES[self.k] += (c[k_dash] *
-                                                  (self.var_estimate[k_dash] + 
-                                                   correction))
-            #endregion
-            # --------------------------------------------------------------- #
+            # Recycling scheme
+            if self.rc:
+                (self.mean_estimate_rc[self.k], 
+                 self.var_estimate_rc[self.k]) = self.rc.update_estimate(wn, self.k, 
+                                                                         self.mean_estimate, 
+                                                                         self.var_estimate)
 
             # Record effective sample size at kth iteration
             self.Neff[self.k] = 1 / np.sum(np.square(wn))

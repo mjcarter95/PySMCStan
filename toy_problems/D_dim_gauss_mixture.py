@@ -92,11 +92,13 @@ N = 10
 K = 100
 
 # OptL SMC sampler with Gaussian approximation
-smc_gauss = SMC(N, D, p, q0, K, proposal=q, optL='gauss')
+smc_gauss = SMC(N, D, p, q0, K, proposal=q, optL='gauss',
+                rc_scheme='ESS_Recycling')
 smc_gauss.generate_samples()
 
 # OptL SMC sampler with Monte-Carlo approximation
-smc_mc = SMC(N, D, p, q0, K, proposal=q, optL='monte-carlo')
+smc_mc = SMC(N, D, p, q0, K, proposal=q, optL='monte-carlo', 
+             rc_scheme='ESS_Recycling')
 smc_mc.generate_samples()
 
 # Plots of estimated mean
@@ -104,10 +106,10 @@ fig, ax = plt.subplots(ncols=2)
 for i in range(2):
     for d in range(D):
         if i == 0:
-            ax[i].plot(smc_gauss.mean_estimate_EES[:, d], 'k',
+            ax[i].plot(smc_gauss.mean_estimate_rc[:, d], 'k',
                        alpha=0.5)
         if i == 1:
-            ax[i].plot(smc_mc.mean_estimate_EES[:, d], 'r',
+            ax[i].plot(smc_mc.mean_estimate_rc[:, d], 'r',
                        alpha=0.5)
     ax[i].plot(np.repeat(p.mu[i], K), 'lime', linewidth=3.0, linestyle='--')
     ax[i].set_xlabel('Iteration')
@@ -123,10 +125,10 @@ fig, ax = plt.subplots(ncols=2)
 for i in range(2):
     for d in range(D):
         if i == 0:
-            ax[i].plot(smc_gauss.var_estimate_EES[:, d, d], 'k',
+            ax[i].plot(smc_gauss.var_estimate_rc[:, d, d], 'k',
                        alpha=0.5)
         if i == 1:
-            ax[i].plot(smc_mc.var_estimate_EES[:, d, d], 'r',
+            ax[i].plot(smc_mc.var_estimate_rc[:, d, d], 'r',
                        alpha=0.5)
     ax[i].plot(np.repeat(p.cov[i, i], K), 'lime', linewidth=3.0,
                linestyle='--')

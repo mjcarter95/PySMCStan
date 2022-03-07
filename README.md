@@ -25,6 +25,9 @@
 ## Version 4
 - Introduced separate file of recycling schemes
 
+## Version 5 (development)
+- Introduced automated testing for SMC_HMC_BASE.py
+
 ## Requirements
 - To install required packages run ```pip install -r requirements.txt```
 

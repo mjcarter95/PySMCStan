@@ -62,7 +62,7 @@ q0 = Q0()
 q = Q()
 
 def test_gauss_optL():
-    """ Test the predictions made by an SMC sampler with Monte-Carlo
+    """ Test the predictions made by an SMC sampler with Gaussian
         approximation of the optimal L-kernel.
 
     """

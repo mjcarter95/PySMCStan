@@ -2,6 +2,7 @@ import autograd.numpy as np
 import importance_sampling as IS
 from SMC_TEMPLATES import Q_Base
 from RECYCLING import ESS_Recycling
+from STAN_MODEL import StanModel
 
 
 class SMC():
@@ -180,6 +181,14 @@ class SMC():
         # Final quantities to be assigned to self
         self.x = x
         self.logw = logw
+    
+        # Constrain estimates if using Stan model
+        if isinstance(self.p, StanModel):
+            self.constrained_mean_estimate = self.p.constrain_pars(self.mean_estimate)
+            # self.constrained_var_estimate = self.p.constrain_pars(self.var_estimate)
+            if self.rc:
+                self.constrained_mean_estimate_rc = self.p.constrain_pars(self.mean_estimate_rc)
+                # self.constrained_var_estimate_rc = self.p.constrain_pars(self.var_estimate_rc)
 
     def update_weights(self, x, x_new, logw, p_logpdf_x,
                        p_logpdf_x_new):

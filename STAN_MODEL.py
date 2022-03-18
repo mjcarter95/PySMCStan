@@ -27,7 +27,11 @@ class StanModel:
         self.stan_model = Model(model_name=model_name, program_code=stan_code, data=data)
         self.stan_model.compile()
         self.D = self.stan_model.n_pars()
-        self.constrained_D = len(self.stan_model.constrained_param_names())
+        cparam_names = self.stan_model.constrained_param_names()
+        if cparam_names is None:
+            self.constrained_D = self.D
+        else:
+            self.constrained_D = len(cparam_names)
 
     def logpdf(self, upar, adjust_transform=True):
         N = upar.shape[0]

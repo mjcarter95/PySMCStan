@@ -10,13 +10,16 @@ from STAN_MODEL import StanModel, read_data, read_model
 
 """
 Evaluating optimal L-kernel approaches when targeting a
-D-dimensional Gaussian.
+Stan model. The default Stan model is a 5-dimensional Student T
+distribution with mean {-4, -2, 0, 2, 4} and 5 degrees of freedom.
 
-P.L.Green
+P.L.Green, M.J.Carter
 """
 
 # Load Stan model
-model_name = "eight_schools"
+model_name = "student_t"
+student_t_mean = np.array([-4., -2., 0., 2., 4.])
+student_t_var = np.array([1.67, 1.67, 1.67, 1.67, 1.67])
 model_data = read_data(model_name)
 model_code = read_model(model_name)
 sm = StanModel(
@@ -63,9 +66,8 @@ for i in range(2):
         if i == 1:
             ax[i].plot(smc_mc.constrained_mean_estimate_rc[:, d], 'r',
                        alpha=0.5)
-    ax[i].plot(np.repeat(2, K), 'lime', linewidth=3.0,
-               linestyle='--')
-    ax[i].set_ylim([-2, 5])
+        ax[i].plot(np.repeat(student_t_mean[d], K), 'lime', linewidth=3.0,
+                linestyle='--')
     ax[i].set_xlabel('Iteration')
     ax[i].set_ylabel('E[$x$]')
     if i == 0:
@@ -84,9 +86,8 @@ for i in range(2):
         if i == 1:
             ax[i].plot(smc_mc.var_estimate_rc[:, d, d], 'r',
                        alpha=0.5)
-    ax[i].plot(np.repeat(1, K), 'lime', linewidth=3.0,
-               linestyle='--')
-    ax[i].set_ylim([0, 1.5])
+        ax[i].plot(np.repeat(student_t_var[d], K), 'lime', linewidth=3.0,
+                linestyle='--')
     ax[i].set_xlabel('Iteration')
     ax[i].set_ylabel('Var[$x$]')
     if i == 0:

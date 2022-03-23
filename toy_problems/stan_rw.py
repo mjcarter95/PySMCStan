@@ -56,18 +56,38 @@ smc_mc = SMC(N, sm.D, sm, q0, K, proposal='rw', optL='monte-carlo',
              rc_scheme='ESS_Recycling')
 smc_mc.generate_samples()
 
-# Plots of estimated mean
+
+# We can print the parameter estimates, the
+# function also returns a dictionary of estimates
+smc_mc_ests = sm.print_ests(
+    K,
+    smc_mc.constrained_mean_estimate_rc, 
+    smc_mc.transformed_mean_estimate_rc,
+    verbose=True
+)
+print(type(smc_mc_ests))
+
+smc_gauss_ests = sm.print_ests(
+    K,
+    smc_gauss.constrained_mean_estimate_rc, 
+    smc_gauss.transformed_mean_estimate_rc,
+    verbose=True
+)
+print(type(smc_gauss_ests))
+
+# Plots of constrained mean estimates
+# Note: This will not include transformed parameter estimates
 fig, ax = plt.subplots(ncols=2)
 for i in range(2):
-    for d in range(sm.constrained_D):
+    for d in range(sm.D):
         if i == 0:
             ax[i].plot(smc_gauss.constrained_mean_estimate_rc[:, d], 'k',
                        alpha=0.5)
         if i == 1:
             ax[i].plot(smc_mc.constrained_mean_estimate_rc[:, d], 'r',
                        alpha=0.5)
-        ax[i].plot(np.repeat(student_t_mean[d], K), 'lime', linewidth=3.0,
-                linestyle='--')
+        # ax[i].plot(np.repeat(student_t_mean[d], K), 'lime', linewidth=3.0,
+        #         linestyle='--')
     ax[i].set_xlabel('Iteration')
     ax[i].set_ylabel('E[$x$]')
     if i == 0:
@@ -86,8 +106,8 @@ for i in range(2):
         if i == 1:
             ax[i].plot(smc_mc.var_estimate_rc[:, d, d], 'r',
                        alpha=0.5)
-        ax[i].plot(np.repeat(student_t_var[d], K), 'lime', linewidth=3.0,
-                linestyle='--')
+        # ax[i].plot(np.repeat(student_t_var[d], K), 'lime', linewidth=3.0,
+        #         linestyle='--')
     ax[i].set_xlabel('Iteration')
     ax[i].set_ylabel('Var[$x$]')
     if i == 0:

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+git clone https://github.com/mjcarter95/PyBindStan.git
+cd pybindstan
+make
+python3 -m pip install -e .
+cd ../

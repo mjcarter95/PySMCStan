@@ -2,3 +2,5 @@ matplotlib
 scipy
 autograd
 numpy
+appdirs
+lz4

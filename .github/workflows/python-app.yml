@@ -36,7 +36,10 @@ jobs:
       run: make
       working-directory: ./PyBindStan
     - name: Install PyBindStan
-      run: python -m pip install ./PyBindStan
+      run: |
+        python -m pip install ./PyBindStan
+        ls
+        rm -rf ./PyBindStan
     - name: Test with pytest
       run: |
         pytest

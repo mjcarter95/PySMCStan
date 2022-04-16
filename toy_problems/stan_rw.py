@@ -17,7 +17,7 @@ P.L.Green, M.J.Carter
 """
 
 # Load Stan model
-model_name = "gaussian"
+model_name = "normal_5d"
 gaussian_mean = np.array([-4., -2., 0., 2., 4.])
 gaussian_var = np.array([1, 1, 1, 1, 1])
 model_data = read_data(model_name)

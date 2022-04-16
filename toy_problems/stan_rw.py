@@ -10,16 +10,16 @@ from STAN_MODEL import StanModel, read_data, read_model
 
 """
 Evaluating optimal L-kernel approaches when targeting a
-Stan model. The default Stan model is a 5-dimensional Student T
-distribution with mean {-4, -2, 0, 2, 4} and 5 degrees of freedom.
+Stan model. The default Stan model is a 5-dimensional Multivariate
+Gaussian distribution with mean {-4, -2, 0, 2, 4} and variance I.
 
 P.L.Green, M.J.Carter
 """
 
 # Load Stan model
-model_name = "student_t"
-student_t_mean = np.array([-4., -2., 0., 2., 4.])
-student_t_var = np.array([1.67, 1.67, 1.67, 1.67, 1.67])
+model_name = "gaussian"
+gaussian_mean = np.array([-4., -2., 0., 2., 4.])
+gaussian_var = np.array([1, 1, 1, 1, 1])
 model_data = read_data(model_name)
 model_code = read_model(model_name)
 sm = StanModel(
@@ -48,32 +48,32 @@ K = 100
 
 # OptL SMC sampler with Gaussian approximation
 smc_gauss = SMC(N, sm.D, sm, q0, K, proposal='rw', optL='gauss',
-                rc_scheme='ESS_Recycling')
+                rc_scheme='ESS_Recycling', verbose=True)
 smc_gauss.generate_samples()
 
 # OptL SMC sampler with Monte-Carlo approximation
 smc_mc = SMC(N, sm.D, sm, q0, K, proposal='rw', optL='monte-carlo', 
-             rc_scheme='ESS_Recycling')
+             rc_scheme='ESS_Recycling', verbose=True)
 smc_mc.generate_samples()
 
 
 # We can print the parameter estimates, the
 # function also returns a dictionary of estimates
-smc_mc_ests = sm.print_ests(
-    K,
-    smc_mc.constrained_mean_estimate_rc, 
-    smc_mc.transformed_mean_estimate_rc,
-    verbose=True
-)
-print(type(smc_mc_ests))
+# smc_mc_ests = sm.print_ests(
+#     K,
+#     smc_mc.constrained_mean_estimate_rc, 
+#     smc_mc.transformed_mean_estimate_rc,
+#     verbose=True
+# )
+# print(type(smc_mc_ests))
 
-smc_gauss_ests = sm.print_ests(
-    K,
-    smc_gauss.constrained_mean_estimate_rc, 
-    smc_gauss.transformed_mean_estimate_rc,
-    verbose=True
-)
-print(type(smc_gauss_ests))
+# smc_gauss_ests = sm.print_ests(
+#     K,
+#     smc_gauss.constrained_mean_estimate_rc, 
+#     smc_gauss.transformed_mean_estimate_rc,
+#     verbose=True
+# )
+# print(type(smc_gauss_ests))
 
 # Plots of constrained mean estimates
 # Note: This will not include transformed parameter estimates
@@ -86,8 +86,8 @@ for i in range(2):
         if i == 1:
             ax[i].plot(smc_mc.constrained_mean_estimate_rc[:, d], 'r',
                        alpha=0.5)
-        # ax[i].plot(np.repeat(student_t_mean[d], K), 'lime', linewidth=3.0,
-        #         linestyle='--')
+        ax[i].plot(np.repeat(gaussian_mean[d], K), 'lime', linewidth=3.0,
+                linestyle='--')
     ax[i].set_xlabel('Iteration')
     ax[i].set_ylabel('E[$x$]')
     if i == 0:
@@ -101,13 +101,13 @@ fig, ax = plt.subplots(ncols=2)
 for i in range(2):
     for d in range(sm.D):
         if i == 0:
-            ax[i].plot(smc_gauss.var_estimate_rc[:, d, d], 'k',
+            ax[i].plot(smc_gauss.constrained_var_estimate_rc[:, d], 'k',
                        alpha=0.5)
         if i == 1:
-            ax[i].plot(smc_mc.var_estimate_rc[:, d, d], 'r',
+            ax[i].plot(smc_mc.constrained_var_estimate_rc[:, d], 'r',
                        alpha=0.5)
-        # ax[i].plot(np.repeat(student_t_var[d], K), 'lime', linewidth=3.0,
-        #         linestyle='--')
+        ax[i].plot(np.repeat(gaussian_var[d], K), 'lime', linewidth=3.0,
+                linestyle='--')
     ax[i].set_xlabel('Iteration')
     ax[i].set_ylabel('Var[$x$]')
     if i == 0:

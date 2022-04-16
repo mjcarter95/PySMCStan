@@ -96,11 +96,20 @@ class StanModel(Target_Base):
     def logpdfgrad(self, upar, adjust_transform=True):
         return self.stan_model.log_prob_grad(upar, adjust_transform)
 
-    def constrain_pars(self, upar, include_tparams=True, include_gqs=True):
+    def constrain_mean(self, upar, include_tparams=True, include_gqs=True):
         constrained_estimates = np.zeros([upar.shape[0], self.D])
         transformed_estimates = np.zeros([upar.shape[0], (self.constrained_D - self.D)])
         for i in range(upar.shape[0]):
             cpar = self.stan_model.constrain_pars(upar[i])
+            constrained_estimates[i] = cpar[:self.D]
+            transformed_estimates[i] = cpar[self.D:]
+        return constrained_estimates, transformed_estimates
+
+    def constrain_var(self, upar, include_tparams=True, include_gqs=True):
+        constrained_estimates = np.zeros([upar.shape[0], self.D])
+        transformed_estimates = np.zeros([upar.shape[0], (self.constrained_D - self.D)])
+        for i in range(upar.shape[0]):
+            cpar = self.stan_model.constrain_pars(np.diag(upar[i]))
             constrained_estimates[i] = cpar[:self.D]
             transformed_estimates[i] = cpar[self.D:]
         return constrained_estimates, transformed_estimates
